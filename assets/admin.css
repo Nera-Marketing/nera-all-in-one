@@ -1,0 +1,568 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@500;600&display=swap');
+
+/**
+ * Nera All In One — Admin styles (light refined).
+ * No build step. Plain CSS. Everything visual is scoped under .nera-aio-app so it
+ * never leaks into wp-admin chrome. Modal + tier-badge classes are preserved for JS.
+ */
+
+.nera-aio-wrap {
+	max-width: 1240px;
+}
+
+.nera-aio-app {
+	--nera-ink: #0f172a;
+	--nera-ink-soft: #475569;
+	--nera-muted: #94a3b8;
+	--nera-line: #e2e8f0;
+	--nera-surface: #ffffff;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+	color: var(--nera-ink);
+	margin-top: 8px;
+}
+
+/* =========================================================================
+   Hero
+   ========================================================================= */
+
+.nera-aio-hero {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 18px;
+	padding: 26px 28px;
+	border: 1px solid var(--nera-line);
+	border-radius: 16px;
+	background: linear-gradient( 135deg, #ffffff 0%, #f4f7fc 55%, #eef2fb 100% );
+	box-shadow: 0 1px 2px rgba( 16, 24, 40, 0.05 );
+}
+
+.nera-aio-hero--compact {
+	padding: 20px 24px;
+}
+
+.nera-aio-hero__title {
+	font-family: "Space Grotesk", -apple-system, system-ui, sans-serif;
+	font-weight: 700;
+	font-size: clamp( 1.5rem, 2.6vw, 2.25rem );
+	line-height: 1.1;
+	margin: 0;
+	padding: 0;
+	background: linear-gradient( 92deg, #1e293b 0%, #2563eb 60%, #7c3aed 100% );
+	-webkit-background-clip: text;
+	background-clip: text;
+	-webkit-text-fill-color: transparent;
+	color: #1e293b; /* fallback */
+}
+
+.nera-aio-hero__sub {
+	margin: 8px 0 0;
+	color: var(--nera-ink-soft);
+	font-size: 13.5px;
+	font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+	letter-spacing: 0.01em;
+}
+
+.nera-aio-hero__aside {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 12px;
+}
+
+.nera-aio-hero__pills {
+	display: flex;
+	gap: 8px;
+}
+
+.nera-aio-hero__actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+}
+
+/* =========================================================================
+   Plugin grid + cards
+   ========================================================================= */
+
+.nera-aio-grid {
+	display: grid;
+	grid-template-columns: repeat( auto-fill, minmax( 300px, 1fr ) );
+	gap: 18px;
+	margin-top: 22px;
+}
+
+.nera-aio-plugin-card {
+	--nera-accent: #64748b;
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 18px 18px 16px;
+	background: var(--nera-surface);
+	border: 1px solid var(--nera-line);
+	border-radius: 12px;
+	box-shadow: 0 1px 2px rgba( 16, 24, 40, 0.06 );
+	overflow: hidden;
+	transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+	animation: nera-aio-fade-up 0.42s ease both;
+	animation-delay: calc( var(--nera-i, 0) * 45ms );
+}
+
+.nera-aio-plugin-card::after {
+	content: "";
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	height: 4px;
+	background: var(--nera-accent);
+	opacity: 0.9;
+}
+
+.nera-aio-plugin-card:hover {
+	transform: translateY( -3px );
+	box-shadow: 0 12px 30px rgba( 16, 24, 40, 0.13 );
+	border-color: var(--nera-accent);
+}
+
+.nera-aio-plugin-card--locked,
+.nera-aio-plugin-card--standalone,
+.nera-aio-plugin-card--coming-soon {
+	background: #fbfcfe;
+}
+
+.nera-aio-plugin-card--locked .nera-aio-card__icon,
+.nera-aio-plugin-card--standalone .nera-aio-card__icon,
+.nera-aio-plugin-card--coming-soon .nera-aio-card__icon {
+	filter: grayscale( 0.35 );
+}
+
+.nera-aio-plugin-card--coming-soon {
+	opacity: 0.78;
+}
+
+.nera-aio-card__head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.nera-aio-card__icon {
+	display: inline-grid;
+	place-items: center;
+	width: 42px;
+	height: 42px;
+	border-radius: 11px;
+	font-size: 21px;
+	line-height: 1;
+	background: rgba( 100, 116, 139, 0.12 ); /* fallback */
+	background: color-mix( in srgb, var(--nera-accent) 14%, #ffffff );
+	border: 1px solid rgba( 100, 116, 139, 0.18 );
+	border-color: color-mix( in srgb, var(--nera-accent) 26%, #ffffff );
+}
+
+.nera-aio-card__name {
+	font-family: "Space Grotesk", -apple-system, system-ui, sans-serif;
+	font-size: 16px;
+	font-weight: 700;
+	line-height: 1.25;
+	margin: 0;
+	color: var(--nera-ink);
+}
+
+.nera-aio-card__desc {
+	margin: 0;
+	flex: 1;
+	color: var(--nera-ink-soft);
+	font-size: 13px;
+	line-height: 1.5;
+}
+
+.nera-aio-card__badges {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+
+.nera-aio-card__action {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 8px;
+	margin-top: 4px;
+	min-height: 30px;
+}
+
+/* Update row (installed, GitHub-sourced plugins with a newer release) */
+.nera-aio-version-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.nera-aio-update-btn {
+	font-size: 12px !important;
+}
+
+.nera-aio-muted {
+	color: var(--nera-muted);
+	font-size: 12px;
+	font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+.nera-aio-ok {
+	color: #15803d;
+	font-weight: 600;
+	font-size: 13px;
+}
+
+/* =========================================================================
+   On/off toggle switch
+   ========================================================================= */
+
+.nera-aio-switch {
+	display: inline-flex;
+	align-items: center;
+	gap: 9px;
+	cursor: pointer;
+	user-select: none;
+}
+
+/* Visually hidden checkbox — drives state via :checked, stays focusable. */
+.nera-aio-switch input {
+	position: absolute;
+	opacity: 0;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	border: 0;
+	overflow: hidden;
+	clip: rect( 0 0 0 0 );
+}
+
+.nera-aio-switch__track {
+	position: relative;
+	flex: 0 0 auto;
+	width: 40px;
+	height: 22px;
+	border-radius: 999px;
+	background: #cbd5e1;
+	transition: background 0.18s ease;
+}
+
+.nera-aio-switch__thumb {
+	position: absolute;
+	top: 2px;
+	left: 2px;
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+	background: #ffffff;
+	box-shadow: 0 1px 2px rgba( 16, 24, 40, 0.3 );
+	transition: transform 0.18s ease;
+}
+
+.nera-aio-switch__label {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--nera-ink-soft);
+	font-family: "JetBrains Mono", ui-monospace, monospace;
+	min-width: 22px;
+}
+
+.nera-aio-switch input:checked + .nera-aio-switch__track {
+	background: #334155; /* neutral slate — consistent across all cards */
+}
+
+.nera-aio-switch input:checked + .nera-aio-switch__track .nera-aio-switch__thumb {
+	transform: translateX( 18px );
+}
+
+.nera-aio-switch input:focus-visible + .nera-aio-switch__track {
+	outline: 2px solid #334155;
+	outline-offset: 2px;
+}
+
+/* Pending (request in flight) — dim + block interaction. */
+.nera-aio-plugin-card.is-pending {
+	opacity: 0.6;
+	pointer-events: none;
+}
+
+.nera-aio-switch input:disabled + .nera-aio-switch__track {
+	opacity: 0.6;
+}
+
+@keyframes nera-aio-fade-up {
+	from { opacity: 0; transform: translateY( 10px ); }
+	to   { opacity: 1; transform: translateY( 0 ); }
+}
+
+@media ( prefers-reduced-motion: reduce ) {
+	.nera-aio-plugin-card { animation: none; }
+}
+
+/* =========================================================================
+   Panels (License page)
+   ========================================================================= */
+
+.nera-aio-panel {
+	background: var(--nera-surface);
+	border: 1px solid var(--nera-line);
+	border-radius: 12px;
+	padding: 20px 24px;
+	margin-top: 18px;
+	max-width: 640px;
+	box-shadow: 0 1px 2px rgba( 16, 24, 40, 0.06 );
+}
+
+.nera-aio-panel h2 {
+	margin-top: 0;
+	font-family: "Space Grotesk", system-ui, sans-serif;
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--nera-ink);
+}
+
+.nera-aio-source {
+	color: var(--nera-muted);
+	font-size: 12px;
+	font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+.nera-aio-inline-notice {
+	font-size: 13px;
+}
+
+.nera-aio-inline-notice.is-success { color: #15803d; }
+.nera-aio-inline-notice.is-error { color: #b32d2e; }
+
+.nera-aio-demo-notice {
+	margin: 12px 0 !important;
+}
+
+/* =========================================================================
+   Badges — base
+   ========================================================================= */
+
+.nera-aio-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 3px 9px;
+	border-radius: 999px;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1.5;
+	white-space: nowrap;
+	letter-spacing: 0.03em;
+	font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+/* Category badge — accent-tinted */
+.nera-aio-badge--cat {
+	text-transform: uppercase;
+	font-size: 10px;
+	letter-spacing: 0.09em;
+	border-radius: 6px;
+	color: #475569; /* fallback */
+	color: color-mix( in srgb, var(--nera-accent) 72%, #1e293b );
+	background: rgba( 100, 116, 139, 0.1 ); /* fallback */
+	background: color-mix( in srgb, var(--nera-accent) 12%, #ffffff );
+	border: 1px solid rgba( 100, 116, 139, 0.22 );
+	border-color: color-mix( in srgb, var(--nera-accent) 30%, #ffffff );
+}
+
+/* Status pills */
+.nera-aio-badge--active {
+	background-color: #d1f4e0;
+	color: #0a5132;
+	border: 1px solid #a3e0bf;
+}
+
+.nera-aio-badge--locked {
+	background-color: #eef1f5;
+	color: #475569;
+	border: 1px solid #d4dbe4;
+}
+
+.nera-aio-badge--locked::before {
+	content: "🔒";
+	font-size: 10px;
+}
+
+.nera-aio-badge--available {
+	background-color: #dbeafe;
+	color: #1e40af;
+	border: 1px solid #b6d3fe;
+}
+
+.nera-aio-badge--standalone {
+	background-color: #fef3c7;
+	color: #854d0e;
+	border: 1px solid #fde68a;
+}
+
+.nera-aio-badge--installed {
+	background-color: #e0e7ff;
+	color: #3730a3;
+	border: 1px solid #c7d2fe;
+}
+
+.nera-aio-badge--coming-soon {
+	background-color: #f1f5f9;
+	color: #64748b;
+	border: 1px solid #e2e8f0;
+}
+
+/* Legacy status keys (kept for safety) */
+.nera-aio-badge--deps-missing {
+	background-color: #fff3cd;
+	color: #664d03;
+	border: 1px solid #ffda6a;
+}
+
+.nera-aio-badge--conflict {
+	background-color: #f8d7da;
+	color: #58151c;
+	border: 1px solid #f1aeb5;
+}
+
+.nera-aio-badge--disabled {
+	background-color: #e9ecef;
+	color: #6c757d;
+	border: 1px solid #dee2e6;
+}
+
+/* =========================================================================
+   Tier badges
+   ========================================================================= */
+
+.nera-aio-badge--tier {
+	border-radius: 6px;
+	font-size: 10px;
+	text-transform: uppercase;
+}
+
+.nera-aio-badge--tier-free {
+	background-color: #eef1f5;
+	color: #475569;
+	border: 1px solid #d4dbe4;
+}
+
+.nera-aio-badge--tier-pro {
+	background-color: #ede9fe;
+	color: #5b21b6;
+	border: 1px solid #d6c9fb;
+}
+
+.nera-aio-badge--tier-agency {
+	background-color: #fde7f3;
+	color: #9d174d;
+	border: 1px solid #fbcfe8;
+}
+
+.nera-aio-badge--demo {
+	background-color: #fef3c7;
+	color: #854d0e;
+	border: 1px solid #fde68a;
+	font-size: 10px;
+	text-transform: uppercase;
+}
+
+/* =========================================================================
+   Upgrade modal (unchanged behaviour; refined styling)
+   ========================================================================= */
+
+.nera-aio-modal {
+	position: fixed;
+	inset: 0;
+	z-index: 100000;
+}
+
+.nera-aio-modal__overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba( 15, 23, 42, 0.55 );
+	backdrop-filter: blur( 2px );
+	cursor: pointer;
+}
+
+.nera-aio-modal__card {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate( -50%, -50% );
+	background: #fff;
+	border-radius: 14px;
+	padding: 30px 34px;
+	min-width: 360px;
+	max-width: 520px;
+	width: 90%;
+	box-shadow: 0 24px 60px rgba( 15, 23, 42, 0.3 );
+	z-index: 100001;
+}
+
+.nera-aio-modal__card h2 {
+	margin-top: 0;
+	font-family: "Space Grotesk", system-ui, sans-serif;
+	font-size: 19px;
+}
+
+.nera-aio-modal__close {
+	position: absolute;
+	top: 12px;
+	right: 16px;
+	background: none;
+	border: none;
+	font-size: 24px;
+	line-height: 1;
+	cursor: pointer;
+	color: #64748b;
+	padding: 0;
+}
+
+.nera-aio-modal__close:hover {
+	color: #0f172a;
+}
+
+.nera-aio-demo-key-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 14px 0;
+}
+
+.nera-aio-demo-key {
+	flex: 1;
+	background: #f1f5f9;
+	border: 1px solid #cbd5e1;
+	border-radius: 6px;
+	padding: 8px 12px;
+	font-size: 13px;
+	font-family: "JetBrains Mono", ui-monospace, monospace;
+	word-break: break-all;
+	color: #0f172a;
+}
+
+/* =========================================================================
+   Responsive
+   ========================================================================= */
+
+@media ( max-width: 600px ) {
+	.nera-aio-hero {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+	.nera-aio-hero__aside {
+		align-items: flex-start;
+	}
+}

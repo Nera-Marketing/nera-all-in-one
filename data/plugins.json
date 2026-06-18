@@ -1,0 +1,109 @@
+{
+  "schema": 1,
+  "plugins": [
+    {
+      "id": "age-gate",
+      "name": "Age Verification",
+      "tagline": "DOB age verification & under-18 add-to-cart blocking.",
+      "icon": "🛡️",
+      "category": "Compliance",
+      "accent": "#0ea5e9",
+      "min_tier": "free",
+      "slug": "nera-age-shield-plugin",
+      "main_file": "nera-dcms-age-gate.php",
+      "gh_repo": "Nera-Marketing/nera-age-shield-plugin",
+      "deps": ["woocommerce"]
+    },
+    {
+      "id": "spending-limit",
+      "name": "Spending Limits",
+      "tagline": "Player spend caps & responsible-gambling limits.",
+      "icon": "💷",
+      "category": "Compliance",
+      "accent": "#06b6d4",
+      "min_tier": "free",
+      "slug": "nera-spending-amount-limit-plugin",
+      "main_file": "nera-spending-amount-limit-plugin.php",
+      "gh_repo": "Nera-Marketing/nera-spending-amount-limit-plugin",
+      "deps": ["woocommerce"]
+    },
+    {
+      "id": "async-tickets",
+      "name": "Async Tickets",
+      "tagline": "Background ticket generation via Action Scheduler.",
+      "icon": "⚡",
+      "category": "Reliability",
+      "accent": "#2563eb",
+      "min_tier": "free",
+      "slug": "nera-lottery-async-tickets",
+      "main_file": "nera-lottery-async-tickets.php",
+      "gh_repo": null,
+      "deps": ["woocommerce"]
+    },
+    {
+      "id": "instant-win",
+      "name": "Instant Win Rules",
+      "tagline": "Threshold & schedule rules for instant prizes.",
+      "icon": "🎯",
+      "category": "Engagement",
+      "accent": "#7c3aed",
+      "min_tier": "pro",
+      "slug": "nera-instant-win-threshold",
+      "main_file": "nera-instant-win-threshold.php",
+      "gh_repo": "Nera-Marketing/nera-instant-win-threshold",
+      "deps": ["woocommerce"]
+    },
+    {
+      "id": "spin-to-win",
+      "name": "Spin To Win",
+      "tagline": "Interactive prize wheel per competition.",
+      "icon": "🎡",
+      "category": "Engagement",
+      "accent": "#db2777",
+      "min_tier": "pro",
+      "slug": "nera-spin-to-win",
+      "main_file": "nera-spin-to-win.php",
+      "gh_repo": "Nera-Marketing/nera-spin-to-win-plugin",
+      "deps": ["woocommerce"]
+    },
+    {
+      "id": "wallet-adjustments",
+      "name": "Wallet Adjustments",
+      "tagline": "Manual wallet credit / debit back-office tool.",
+      "icon": "💰",
+      "category": "Back-office",
+      "accent": "#d97706",
+      "min_tier": "agency",
+      "slug": "nera-wallet-adjustments",
+      "main_file": "nera-wallet-adjustments.php",
+      "gh_repo": null,
+      "deps": []
+    },
+    {
+      "id": "seeder",
+      "name": "Competitions Seeder",
+      "tagline": "Seed demo competitions & products (non-prod).",
+      "icon": "🌱",
+      "category": "Dev tools",
+      "accent": "#16a34a",
+      "min_tier": "agency",
+      "slug": "nera-competitions-seeder",
+      "main_file": "nera-competitions-seeder.php",
+      "gh_repo": "Nera-Marketing/nera-competitions-seeder",
+      "deps": []
+    },
+    {
+      "id": "test",
+      "name": "Test Suite",
+      "tagline": "Purchase simulator & load-test tooling (non-prod).",
+      "icon": "🧪",
+      "category": "Dev tools",
+      "accent": "#65a30d",
+      "min_tier": "agency",
+      "slug": "nera-test",
+      "main_file": "nera-test.php",
+      "gh_repo": null,
+      "deps": []
+    }
+  ]
+}
