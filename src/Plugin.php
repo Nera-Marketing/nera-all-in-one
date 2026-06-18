@@ -78,16 +78,6 @@ final class Plugin {
 	 * guarded so a not-yet-delivered module doesn't fatal the engine.
 	 */
 	private function register_modules() {
-		// Free module: wrapped age-gate (adapter lives under modules/, not PSR-4).
-		$age_gate = NERA_AIO_DIR . 'modules/age-gate/Module.php';
-		if ( is_readable( $age_gate ) ) {
-			require_once $age_gate;
-			$fqcn = '\\Nera\\AllInOne\\Modules\\AgeGate\\Module';
-			if ( class_exists( $fqcn ) ) {
-				$this->registry->register( new $fqcn() );
-			}
-		}
-
 		// Pro demo feature (first-party, PSR-4 autoloaded).
 		$demo_pro = '\\Nera\\AllInOne\\DemoPro\\Module';
 		if ( class_exists( $demo_pro ) ) {

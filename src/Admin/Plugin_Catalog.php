@@ -25,11 +25,12 @@ final class Plugin_Catalog {
 	/**
 	 * Catalog ids that ship as in-process wrapped modules inside AIO (usable
 	 * without installing the standalone plugin). These get a module-backed
-	 * toggle instead of an Install button.
+	 * toggle instead of an Install button. Empty — every catalog plugin now
+	 * installs from its GitHub release.
 	 *
 	 * @var string[]
 	 */
-	const WRAPPED_MODULES = array( 'age-gate' );
+	const WRAPPED_MODULES = array();
 
 	/**
 	 * The Nera plugin catalog, sourced from the manifest (remote-with-fallback)
