@@ -96,6 +96,7 @@ final class Plugin {
 			'\\Nera\\AllInOne\\Admin\\Modules_Screen',
 			'\\Nera\\AllInOne\\Admin\\Module_Toggle',
 			'\\Nera\\AllInOne\\Admin\\Install_Controller',
+			'\\Nera\\AllInOne\\Admin\\Plugin_Details',
 		);
 		foreach ( $screens as $fqcn ) {
 			if ( class_exists( $fqcn ) ) {

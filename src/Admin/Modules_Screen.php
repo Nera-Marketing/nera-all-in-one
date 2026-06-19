@@ -97,6 +97,8 @@ final class Modules_Screen {
 				'checkNonce'   => wp_create_nonce( 'nera_aio_check_now' ),
 				'toggleNonce'  => wp_create_nonce( 'nera_aio_toggle' ),
 				'installNonce' => wp_create_nonce( 'nera_aio_install' ),
+				'detailsNonce' => wp_create_nonce( 'nera_aio_details' ),
+				'removeNonce'  => wp_create_nonce( 'nera_aio_remove' ),
 				'demoKey'      => $this->license->is_demo_mode() ? $this->license->get_demo_key() : '',
 				'demoMode'     => $this->license->is_demo_mode(),
 			)
@@ -129,6 +131,7 @@ final class Modules_Screen {
 		</div>
 		<?php
 		Plugin_Catalog::render_upgrade_modal( $this->license );
+		Plugin_Catalog::render_details_modal();
 	}
 
 	/**

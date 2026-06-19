@@ -291,15 +291,23 @@ final class Plugin_Catalog {
 			}
 
 			printf(
-				'<article class="nera-aio-plugin-card nera-aio-plugin-card--%1$s" style="--nera-accent:%2$s;--nera-i:%3$d;">',
+				'<article class="nera-aio-plugin-card nera-aio-plugin-card--clickable nera-aio-plugin-card--%1$s" data-id="%4$s" style="--nera-accent:%2$s;--nera-i:%3$d;">',
 				esc_attr( $statuskey ),
 				esc_attr( $accent ),
-				(int) $i
+				(int) $i,
+				esc_attr( $entry['id'] )
 			);
 
 			echo '<div class="nera-aio-card__head">';
 			echo '<span class="nera-aio-card__icon" aria-hidden="true">' . esc_html( $entry['icon'] ) . '</span>';
 			echo '<span class="nera-aio-badge nera-aio-badge--cat">' . esc_html( $entry['category'] ) . '</span>';
+			printf(
+				'<button type="button" class="nera-aio-card__info" data-id="%1$s" aria-label="%2$s">%3$s</button>',
+				esc_attr( $entry['id'] ),
+				/* translators: %s: plugin name */
+				esc_attr( sprintf( __( 'View details for %s', 'nera-all-in-one' ), $entry['name'] ) ),
+				'&#9432;'
+			);
 			echo '</div>';
 
 			echo '<h3 class="nera-aio-card__name">' . esc_html( $entry['name'] ) . '</h3>';
@@ -456,6 +464,27 @@ final class Plugin_Catalog {
 					<p><?php echo esc_html__( 'Contact Nera to obtain a PRO or Agency license key, then enter it on the License page.', 'nera-all-in-one' ); ?></p>
 					<a href="<?php echo esc_url( admin_url( 'admin.php?page=nera-aio-licensing' ) ); ?>" class="button button-primary"><?php echo esc_html__( 'Go to License page', 'nera-all-in-one' ); ?></a>
 				<?php endif; ?>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Echo the hidden plugin Details modal. An empty shell whose head, body and
+	 * actions are populated by assets/admin.js from the nera_aio_details AJAX
+	 * response. Element IDs match assets/admin.js exactly.
+	 *
+	 * @return void
+	 */
+	public static function render_details_modal() {
+		?>
+		<div id="nera-aio-details-modal" class="nera-aio-modal nera-aio-details-modal" style="display:none;" aria-modal="true" role="dialog" aria-labelledby="nera-aio-details-title">
+			<div class="nera-aio-modal__overlay" id="nera-aio-details-overlay"></div>
+			<div class="nera-aio-modal__card nera-aio-details__card">
+				<button type="button" class="nera-aio-modal__close" id="nera-aio-details-close" aria-label="<?php echo esc_attr__( 'Close', 'nera-all-in-one' ); ?>">&times;</button>
+				<div id="nera-aio-details-head" class="nera-aio-details__head"></div>
+				<div id="nera-aio-details-body" class="nera-aio-readme"></div>
+				<div id="nera-aio-details-actions" class="nera-aio-details__actions"></div>
 			</div>
 		</div>
 		<?php

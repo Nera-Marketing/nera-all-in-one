@@ -381,3 +381,279 @@
 	}
 
 } )();
+
+/* =========================================================================
+   Plugin details modal — open card → fetch info + GitHub README → remove
+   ========================================================================= */
+( function () {
+	'use strict';
+
+	var modal = document.getElementById( 'nera-aio-details-modal' );
+	if ( ! modal ) {
+		return;
+	}
+
+	var head    = document.getElementById( 'nera-aio-details-head' );
+	var body    = document.getElementById( 'nera-aio-details-body' );
+	var actions = document.getElementById( 'nera-aio-details-actions' );
+
+	/**
+	 * Open the details modal.
+	 */
+	function openModal() {
+		modal.style.display          = 'block';
+		document.body.style.overflow = 'hidden';
+		var closeBtn = document.getElementById( 'nera-aio-details-close' );
+		if ( closeBtn ) {
+			closeBtn.focus();
+		}
+	}
+
+	/**
+	 * Close the details modal.
+	 */
+	function closeModal() {
+		modal.style.display          = 'none';
+		document.body.style.overflow = '';
+	}
+
+	/**
+	 * Create an element with an optional class and text.
+	 *
+	 * @param {string}  tag
+	 * @param {?string} className
+	 * @param {?string} text
+	 * @return {HTMLElement}
+	 */
+	function el( tag, className, text ) {
+		var node = document.createElement( tag );
+		if ( className ) {
+			node.className = className;
+		}
+		if ( null != text ) {
+			node.textContent = text;
+		}
+		return node;
+	}
+
+	/**
+	 * Build the modal head (icon, name, badges, version/deps/repo) from the
+	 * details payload. Built with DOM nodes (no innerHTML) since these values
+	 * are not pre-escaped.
+	 *
+	 * @param {Object} d
+	 */
+	function renderHead( d ) {
+		head.textContent = '';
+
+		var titleRow = el( 'div', 'nera-aio-details__title-row' );
+		if ( d.icon ) {
+			titleRow.appendChild( el( 'span', 'nera-aio-details__icon', d.icon ) );
+		}
+		var h2 = el( 'h2', null, d.name );
+		h2.id = 'nera-aio-details-title';
+		titleRow.appendChild( h2 );
+		head.appendChild( titleRow );
+
+		var badges = el( 'div', 'nera-aio-details__badges' );
+		if ( d.category ) {
+			badges.appendChild( el( 'span', 'nera-aio-badge nera-aio-badge--cat', d.category ) );
+		}
+		if ( d.tier ) {
+			badges.appendChild( el( 'span', 'nera-aio-badge nera-aio-badge--tier nera-aio-badge--tier-' + d.tier, d.tier.toUpperCase() ) );
+		}
+		if ( d.status ) {
+			badges.appendChild( el( 'span', 'nera-aio-badge nera-aio-badge--' + ( d.status_key || '' ), d.status ) );
+		}
+		head.appendChild( badges );
+
+		var meta = el( 'p', 'nera-aio-details__meta' );
+		var bits = [];
+		if ( d.version ) {
+			bits.push( 'Version ' + d.version );
+		}
+		if ( d.deps && d.deps.length ) {
+			bits.push( 'Requires: ' + d.deps.join( ', ' ) );
+		}
+		if ( bits.length ) {
+			meta.appendChild( document.createTextNode( bits.join( '  ·  ' ) ) );
+		}
+		if ( d.repo_url ) {
+			if ( meta.childNodes.length ) {
+				meta.appendChild( document.createTextNode( '  ·  ' ) );
+			}
+			var a    = el( 'a', null, d.repo || 'GitHub' );
+			a.href   = d.repo_url;
+			a.target = '_blank';
+			a.rel    = 'noopener noreferrer';
+			meta.appendChild( a );
+		}
+		if ( meta.childNodes.length ) {
+			head.appendChild( meta );
+		}
+	}
+
+	/**
+	 * Fill the modal body with the rendered README, or a fallback.
+	 *
+	 * @param {Object} d
+	 */
+	function renderBody( d ) {
+		if ( d.description_html ) {
+			// Pre-sanitized server-side with wp_kses_post().
+			body.innerHTML = d.description_html;
+		} else {
+			body.textContent = '';
+			body.appendChild( el( 'p', 'nera-aio-details__empty', 'No extended description published yet.' ) );
+			if ( d.tagline ) {
+				body.appendChild( el( 'p', null, d.tagline ) );
+			}
+		}
+	}
+
+	/**
+	 * Build the action row: Remove (when allowed) + Close.
+	 *
+	 * @param {Object} d
+	 */
+	function renderActions( d ) {
+		actions.textContent = '';
+
+		if ( d.can_remove ) {
+			var removeBtn  = el( 'button', 'button nera-aio-remove-btn', 'Remove plugin' );
+			removeBtn.type = 'button';
+			removeBtn.setAttribute( 'data-id', d.id );
+			removeBtn.addEventListener( 'click', function () {
+				doRemove( d, removeBtn );
+			} );
+			actions.appendChild( removeBtn );
+		}
+
+		var closeBtn  = el( 'button', 'button button-secondary', 'Close' );
+		closeBtn.type = 'button';
+		closeBtn.addEventListener( 'click', closeModal );
+		actions.appendChild( closeBtn );
+	}
+
+	/**
+	 * Full delete a plugin, behind an explicit confirm().
+	 *
+	 * @param {Object}      d
+	 * @param {HTMLElement} btn
+	 */
+	function doRemove( d, btn ) {
+		var cfg = window.neraAioAdmin || {};
+		if ( ! cfg.ajaxurl || ! cfg.removeNonce ) {
+			return;
+		}
+
+		var ok = window.confirm(
+			'Permanently delete "' + d.name + '"?\n\n'
+			+ 'This deactivates the plugin, deletes its files from disk, and runs its '
+			+ 'uninstall routine (removing its stored data). This cannot be undone.'
+		);
+		if ( ! ok ) {
+			return;
+		}
+
+		btn.disabled    = true;
+		btn.textContent = 'Removing…';
+
+		var rq = new URLSearchParams();
+		rq.append( 'action', 'nera_aio_remove' );
+		rq.append( '_ajax_nonce', cfg.removeNonce );
+		rq.append( 'id', d.id );
+
+		fetch( cfg.ajaxurl, { method: 'POST', credentials: 'same-origin', body: rq } )
+			.then( function ( res ) {
+				return res.json();
+			} )
+			.then( function ( json ) {
+				if ( json && json.success ) {
+					window.location.reload();
+					return;
+				}
+				btn.disabled    = false;
+				btn.textContent = 'Remove plugin';
+				window.alert( json && json.data && json.data.message ? json.data.message : 'Removal failed.' );
+			} )
+			.catch( function () {
+				btn.disabled    = false;
+				btn.textContent = 'Remove plugin';
+				window.alert( 'Network error.' );
+			} );
+	}
+
+	/**
+	 * Fetch + show details for a catalog id.
+	 *
+	 * @param {string} id
+	 */
+	function openDetails( id ) {
+		var cfg = window.neraAioAdmin || {};
+		if ( ! id || ! cfg.ajaxurl || ! cfg.detailsNonce ) {
+			return;
+		}
+
+		head.textContent    = '';
+		actions.textContent = '';
+		body.textContent    = 'Loading…';
+		openModal();
+
+		var rq = new URLSearchParams();
+		rq.append( 'action', 'nera_aio_details' );
+		rq.append( '_ajax_nonce', cfg.detailsNonce );
+		rq.append( 'id', id );
+
+		fetch( cfg.ajaxurl, { method: 'POST', credentials: 'same-origin', body: rq } )
+			.then( function ( res ) {
+				return res.json();
+			} )
+			.then( function ( json ) {
+				if ( json && json.success && json.data ) {
+					renderHead( json.data );
+					renderBody( json.data );
+					renderActions( json.data );
+					return;
+				}
+				body.textContent = ( json && json.data && json.data.message ) ? json.data.message : 'Failed to load details.';
+			} )
+			.catch( function () {
+				body.textContent = 'Network error.';
+			} );
+	}
+
+	// Trigger: explicit Details (ⓘ) buttons.
+	document.querySelectorAll( '.nera-aio-card__info' ).forEach( function ( btn ) {
+		btn.addEventListener( 'click', function ( e ) {
+			e.stopPropagation();
+			openDetails( btn.getAttribute( 'data-id' ) );
+		} );
+	} );
+
+	// Trigger: whole-card click, except on the card's own interactive controls.
+	document.querySelectorAll( '.nera-aio-plugin-card' ).forEach( function ( card ) {
+		card.addEventListener( 'click', function ( e ) {
+			if ( e.target.closest( 'button, input, a, label, select, .nera-aio-switch' ) ) {
+				return;
+			}
+			openDetails( card.getAttribute( 'data-id' ) );
+		} );
+	} );
+
+	// Close: X, overlay, Escape.
+	var closeX = document.getElementById( 'nera-aio-details-close' );
+	if ( closeX ) {
+		closeX.addEventListener( 'click', closeModal );
+	}
+	var overlay = document.getElementById( 'nera-aio-details-overlay' );
+	if ( overlay ) {
+		overlay.addEventListener( 'click', closeModal );
+	}
+	document.addEventListener( 'keydown', function ( e ) {
+		if ( 'Escape' === e.key && 'none' !== modal.style.display ) {
+			closeModal();
+		}
+	} );
+
+} )();
