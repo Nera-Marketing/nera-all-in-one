@@ -10,3 +10,6 @@
 # OS / editor
 .DS_Store
 *.log
+
+# Local design-preview worktrees (git worktree add ../.worktrees/nera-aio/…)
+../.worktrees/
