@@ -85,11 +85,9 @@ final class Plugin {
 	 * guarded so a not-yet-delivered module doesn't fatal the engine.
 	 */
 	private function register_modules() {
-		// Pro demo feature (first-party, PSR-4 autoloaded).
-		$demo_pro = '\\Nera\\AllInOne\\DemoPro\\Module';
-		if ( class_exists( $demo_pro ) ) {
-			$this->registry->register( new $demo_pro() );
-		}
+		// No wrapped modules currently ship inside AIO — every catalog plugin
+		// installs standalone from its GitHub release. Future in-process
+		// feature modules register here.
 	}
 
 	/**
@@ -108,6 +106,7 @@ final class Plugin {
 			'\\Nera\\AllInOne\\Admin\\Manage_Screen',
 			'\\Nera\\AllInOne\\Admin\\Module_Toggle',
 			'\\Nera\\AllInOne\\Admin\\Install_Controller',
+			'\\Nera\\AllInOne\\Admin\\Repo_Add_Controller',
 			'\\Nera\\AllInOne\\Admin\\Plugin_Details',
 			'\\Nera\\AllInOne\\Admin\\Plugin_Visibility',
 		);

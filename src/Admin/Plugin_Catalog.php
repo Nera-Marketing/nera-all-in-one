@@ -9,6 +9,7 @@
 
 namespace Nera\AllInOne\Admin;
 
+use Nera\AllInOne\Catalog\Hidden_Plugins;
 use Nera\AllInOne\Catalog\Manifest;
 use Nera\AllInOne\Entitlements\Entitlements;
 use Nera\AllInOne\Install\Installer;
@@ -43,8 +44,12 @@ final class Plugin_Catalog {
 	 * @return array[]
 	 */
 	public static function items() {
-		$out = array();
+		$hidden = Hidden_Plugins::ids();
+		$out    = array();
 		foreach ( Manifest::all() as $m ) {
+			if ( in_array( $m['id'], $hidden, true ) ) {
+				continue;
+			}
 			$out[] = array(
 				'id'            => $m['id'],
 				'name'          => $m['name'],
@@ -57,6 +62,7 @@ final class Plugin_Catalog {
 				'main_file'     => $m['main_file'],
 				'gh_repo'       => $m['gh_repo'],
 				'deps'          => $m['deps'],
+				'custom'        => ! empty( $m['custom'] ),
 				'module_id'     => in_array( $m['id'], self::WRAPPED_MODULES, true ) ? $m['id'] : null,
 			);
 		}

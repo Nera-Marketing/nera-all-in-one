@@ -701,11 +701,45 @@
    Manage table + bulk bar
    ========================================================================= */
 
-.nera-aio-bulkbar {
+.nera-aio-addrepo {
 	display: flex;
 	align-items: center;
 	gap: 8px;
 	margin-top: 18px;
+}
+
+.nera-aio-addrepo input[type="url"] {
+	flex: 0 1 420px;
+	min-width: 260px;
+}
+
+.nera-aio-bulkbar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-top: 10px;
+}
+
+/* Icon-only "remove from list" button (×) */
+.nera-aio-row-delist {
+	display: inline-grid;
+	place-items: center;
+	width: 24px;
+	height: 24px;
+	padding: 0;
+	border: none;
+	border-radius: 50%;
+	background: transparent;
+	color: var(--nera-muted);
+	font-size: 16px;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.nera-aio-row-delist:hover,
+.nera-aio-row-delist:focus {
+	color: var(--nera-ink-soft);
+	background: #eef2f7;
 }
 
 .nera-aio-table-wrap {

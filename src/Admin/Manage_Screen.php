@@ -104,11 +104,13 @@ final class Manage_Screen {
 			'nera-aio-admin',
 			'neraAioAdmin',
 			array(
-				'ajaxurl'      => admin_url( 'admin-ajax.php' ),
-				'toggleNonce'  => $is_manager ? wp_create_nonce( 'nera_aio_toggle' ) : '',
-				'installNonce' => $is_manager ? wp_create_nonce( 'nera_aio_install' ) : '',
-				'detailsNonce' => wp_create_nonce( 'nera_aio_details' ),
-				'removeNonce'  => $is_manager ? wp_create_nonce( 'nera_aio_remove' ) : '',
+				'ajaxurl'         => admin_url( 'admin-ajax.php' ),
+				'toggleNonce'     => $is_manager ? wp_create_nonce( 'nera_aio_toggle' ) : '',
+				'installNonce'    => $is_manager ? wp_create_nonce( 'nera_aio_install' ) : '',
+				'detailsNonce'    => wp_create_nonce( 'nera_aio_details' ),
+				'removeNonce'     => $is_manager ? wp_create_nonce( 'nera_aio_remove' ) : '',
+				'repoAddNonce'    => $is_manager ? wp_create_nonce( 'nera_aio_repo_add' ) : '',
+				'repoDelistNonce' => $is_manager ? wp_create_nonce( 'nera_aio_repo_delist' ) : '',
 			)
 		);
 	}
@@ -137,6 +139,7 @@ final class Manage_Screen {
 
 				<?php
 				if ( $is_manager ) {
+					$this->render_addrepo();
 					$this->render_bulkbar();
 				}
 				$this->render_table( $is_manager );
@@ -151,6 +154,23 @@ final class Manage_Screen {
 	// -------------------------------------------------------------------------
 	// Private renderers
 	// -------------------------------------------------------------------------
+
+	/**
+	 * Echo the add-plugin-by-GitHub-URL row (managers only). Element IDs
+	 * match admin.js.
+	 *
+	 * @return void
+	 */
+	private function render_addrepo() {
+		?>
+		<div class="nera-aio-addrepo">
+			<label class="screen-reader-text" for="nera-aio-repo-url"><?php echo esc_html__( 'GitHub repository URL', 'nera-all-in-one' ); ?></label>
+			<input type="url" id="nera-aio-repo-url" class="regular-text" placeholder="https://github.com/Nera-Marketing/plugin-name" />
+			<button type="button" class="button button-primary" id="nera-aio-repo-add"><?php echo esc_html__( 'Add & Install', 'nera-all-in-one' ); ?></button>
+			<span id="nera-aio-repo-status" class="nera-aio-inline-notice" style="display:none;"></span>
+		</div>
+		<?php
+	}
 
 	/**
 	 * Echo the bulk-action bar (managers only). Element IDs match admin.js.
@@ -168,6 +188,7 @@ final class Manage_Screen {
 				<option value="update"><?php echo esc_html__( 'Update', 'nera-all-in-one' ); ?></option>
 				<option value="install"><?php echo esc_html__( 'Install', 'nera-all-in-one' ); ?></option>
 				<option value="uninstall"><?php echo esc_html__( 'Uninstall', 'nera-all-in-one' ); ?></option>
+				<option value="delist"><?php echo esc_html__( 'Remove from list', 'nera-all-in-one' ); ?></option>
 			</select>
 			<button type="button" class="button" id="nera-aio-bulk-apply"><?php echo esc_html__( 'Apply', 'nera-all-in-one' ); ?></button>
 			<span id="nera-aio-bulk-status" class="nera-aio-inline-notice" style="display:none;"></span>
@@ -235,7 +256,7 @@ final class Manage_Screen {
 		}
 
 		printf(
-			'<tr class="nera-aio-row nera-aio-row--%1$s" style="--nera-accent:%2$s;" data-id="%3$s" data-name="%4$s" data-status="%1$s" data-backing="%5$s" data-installed="%6$s" data-active="%7$s" data-has-repo="%8$s" data-has-update="%9$s">',
+			'<tr class="nera-aio-row nera-aio-row--%1$s" style="--nera-accent:%2$s;" data-id="%3$s" data-name="%4$s" data-status="%1$s" data-backing="%5$s" data-installed="%6$s" data-active="%7$s" data-has-repo="%8$s" data-has-update="%9$s" data-custom="%10$s">',
 			esc_attr( $statuskey ),
 			esc_attr( $accent ),
 			esc_attr( $entry['id'] ),
@@ -244,7 +265,8 @@ final class Manage_Screen {
 			$installed ? '1' : '0',
 			$active ? '1' : '0',
 			empty( $entry['gh_repo'] ) ? '0' : '1',
-			$has_update ? '1' : '0'
+			$has_update ? '1' : '0',
+			empty( $entry['custom'] ) ? '0' : '1'
 		);
 
 		if ( ! $readonly ) {
@@ -290,6 +312,16 @@ final class Manage_Screen {
 				esc_attr( $entry['id'] ),
 				esc_attr( $entry['name'] ),
 				esc_html__( 'Remove', 'nera-all-in-one' )
+			);
+		}
+		if ( ! $readonly && ! $installed ) {
+			printf(
+				'<button type="button" class="nera-aio-row-delist" data-id="%1$s" data-name="%2$s" title="%3$s" aria-label="%4$s">&times;</button>',
+				esc_attr( $entry['id'] ),
+				esc_attr( $entry['name'] ),
+				esc_attr__( 'Remove from list', 'nera-all-in-one' ),
+				/* translators: %s: plugin name */
+				esc_attr( sprintf( __( 'Remove %s from list', 'nera-all-in-one' ), $entry['name'] ) )
 			);
 		}
 		echo '</div>';

@@ -133,11 +133,13 @@ final class Dashboard {
 			'nera-aio-admin',
 			'neraAioAdmin',
 			array(
-				'ajaxurl'      => admin_url( 'admin-ajax.php' ),
-				'toggleNonce'  => $is_manager ? wp_create_nonce( 'nera_aio_toggle' ) : '',
-				'installNonce' => $is_manager ? wp_create_nonce( 'nera_aio_install' ) : '',
-				'detailsNonce' => wp_create_nonce( 'nera_aio_details' ),
-				'removeNonce'  => $is_manager ? wp_create_nonce( 'nera_aio_remove' ) : '',
+				'ajaxurl'         => admin_url( 'admin-ajax.php' ),
+				'toggleNonce'     => $is_manager ? wp_create_nonce( 'nera_aio_toggle' ) : '',
+				'installNonce'    => $is_manager ? wp_create_nonce( 'nera_aio_install' ) : '',
+				'detailsNonce'    => wp_create_nonce( 'nera_aio_details' ),
+				'removeNonce'     => $is_manager ? wp_create_nonce( 'nera_aio_remove' ) : '',
+				'repoAddNonce'    => $is_manager ? wp_create_nonce( 'nera_aio_repo_add' ) : '',
+				'repoDelistNonce' => $is_manager ? wp_create_nonce( 'nera_aio_repo_delist' ) : '',
 			)
 		);
 	}

@@ -53,13 +53,15 @@ final class Manifest {
 	 * Return the normalised plugin list.
 	 *
 	 * Order of resolution: live transient → remote fetch → bundled fallback.
+	 * Manager-added custom entries (Custom_Catalog) are appended at read time
+	 * — never cached — with built-in entries winning any id/slug collision.
 	 *
 	 * @return array[] List of normalised entries.
 	 */
 	public static function all() {
 		$cached = get_transient( self::CACHE_KEY );
 		if ( is_array( $cached ) ) {
-			return $cached;
+			return self::with_custom( $cached );
 		}
 
 		$entries = self::fetch_remote();
@@ -69,7 +71,29 @@ final class Manifest {
 			set_transient( self::CACHE_KEY, $entries, self::CACHE_TTL );
 		}
 
-		return $entries;
+		return self::with_custom( $entries );
+	}
+
+	/**
+	 * Append custom entries to a base list, skipping id/slug collisions.
+	 *
+	 * @param array[] $base Normalised built-in entries.
+	 * @return array[]
+	 */
+	private static function with_custom( array $base ) {
+		$ids   = array_column( $base, 'id' );
+		$slugs = array_column( $base, 'slug' );
+
+		foreach ( Custom_Catalog::all() as $entry ) {
+			$entry = self::normalise( $entry );
+			if ( in_array( $entry['id'], $ids, true ) || in_array( $entry['slug'], $slugs, true ) ) {
+				continue;
+			}
+			$entry['custom'] = true;
+			$base[]          = $entry;
+		}
+
+		return $base;
 	}
 
 	/**

@@ -10,6 +10,7 @@
  *   neraAioAdmin.installNonce — nonce for nera_aio_install
  *   neraAioAdmin.detailsNonce — nonce for nera_aio_details
  *   neraAioAdmin.removeNonce  — nonce for nera_aio_remove
+ *   neraAioAdmin.repoAddNonce / repoDelistNonce — custom catalog entries
  *
  * Mutating nonces are empty strings for non-manager viewers; every mutating
  * handler no-ops when its nonce is missing.
@@ -526,6 +527,8 @@
 				return ! installed && hasRepo && 'module' !== backing && 'locked' !== status;
 			case 'uninstall':
 				return installed && 'module' !== backing;
+			case 'delist':
+				return ! installed;
 			default:
 				return false;
 		}
@@ -573,6 +576,16 @@
 			return body;
 		}
 
+		if ( 'delist' === action ) {
+			if ( ! cfg.repoDelistNonce ) {
+				return null;
+			}
+			body.append( 'action', 'nera_aio_repo_delist' );
+			body.append( '_ajax_nonce', cfg.repoDelistNonce );
+			body.append( 'id', id );
+			return body;
+		}
+
 		return null;
 	}
 
@@ -582,6 +595,7 @@
 		update:     'Updating',
 		install:    'Installing',
 		uninstall:  'Removing',
+		delist:     'Removing from list',
 	};
 
 	function runBulk() {
@@ -618,6 +632,19 @@
 				'\n\nThis deactivates each plugin, deletes its files, and runs its uninstall routine. This cannot be undone.'
 			);
 			if ( ! ok ) {
+				return;
+			}
+		}
+
+		if ( 'delist' === action ) {
+			var delistNames = applicable.map( function ( tr ) {
+				return '  ' + tr.getAttribute( 'data-name' );
+			} );
+			var okDelist = window.confirm(
+				'Remove ' + applicable.length + ' plugin(s) from the catalog?\n' + delistNames.join( '\n' ) +
+				'\n\nNo files are deleted — add them back by pasting their GitHub URL.'
+			);
+			if ( ! okDelist ) {
 				return;
 			}
 		}
@@ -720,6 +747,127 @@
 	if ( applyBtn ) {
 		applyBtn.addEventListener( 'click', runBulk );
 	}
+
+	/* -------------------------------------------------------------------------
+	   Add plugin by GitHub repo URL
+	   ------------------------------------------------------------------------- */
+
+	var repoInput = document.getElementById( 'nera-aio-repo-url' );
+	var repoBtn   = document.getElementById( 'nera-aio-repo-add' );
+	var repoStat  = document.getElementById( 'nera-aio-repo-status' );
+
+	function showRepoStatus( message, type ) {
+		if ( ! repoStat ) {
+			return;
+		}
+		repoStat.textContent   = message;
+		repoStat.className     = 'nera-aio-inline-notice is-' + type;
+		repoStat.style.display = 'inline';
+	}
+
+	function submitRepo() {
+		var cfg = window.neraAioAdmin || {};
+		var url = repoInput ? repoInput.value.trim() : '';
+
+		if ( ! cfg.ajaxurl || ! cfg.repoAddNonce ) {
+			return;
+		}
+		if ( ! url ) {
+			showRepoStatus( 'Paste a GitHub repository URL first.', 'error' );
+			return;
+		}
+
+		repoBtn.disabled   = true;
+		repoInput.disabled = true;
+		showRepoStatus( 'Validating & installing…', 'success' );
+
+		var body = new URLSearchParams();
+		body.append( 'action', 'nera_aio_repo_add' );
+		body.append( '_ajax_nonce', cfg.repoAddNonce );
+		body.append( 'url', url );
+
+		fetch( cfg.ajaxurl, {
+			method:      'POST',
+			credentials: 'same-origin',
+			body:        body,
+		} )
+			.then( function ( res ) {
+				return res.json();
+			} )
+			.then( function ( json ) {
+				if ( json && json.success ) {
+					window.location.reload();
+					return;
+				}
+				repoBtn.disabled   = false;
+				repoInput.disabled = false;
+				showRepoStatus( json && json.data && json.data.message ? json.data.message : 'Request failed.', 'error' );
+			} )
+			.catch( function () {
+				repoBtn.disabled   = false;
+				repoInput.disabled = false;
+				showRepoStatus( 'Network error.', 'error' );
+			} );
+	}
+
+	if ( repoBtn ) {
+		repoBtn.addEventListener( 'click', submitRepo );
+	}
+	if ( repoInput ) {
+		repoInput.addEventListener( 'keydown', function ( e ) {
+			if ( 'Enter' === e.key ) {
+				e.preventDefault();
+				submitRepo();
+			}
+		} );
+	}
+
+	/* -------------------------------------------------------------------------
+	   Remove custom entry from the catalog (no files touched)
+	   ------------------------------------------------------------------------- */
+
+	table.querySelectorAll( '.nera-aio-row-delist' ).forEach( function ( btn ) {
+		btn.addEventListener( 'click', function () {
+			var cfg  = window.neraAioAdmin || {};
+			var id   = btn.getAttribute( 'data-id' );
+			var name = btn.getAttribute( 'data-name' ) || id;
+
+			if ( ! cfg.ajaxurl || ! cfg.repoDelistNonce ) {
+				return;
+			}
+			if ( ! window.confirm( 'Remove ' + name + ' from the catalog? No files are deleted — you can add it back later by pasting its GitHub URL.' ) ) {
+				return;
+			}
+
+			btn.disabled = true;
+
+			var body = new URLSearchParams();
+			body.append( 'action', 'nera_aio_repo_delist' );
+			body.append( '_ajax_nonce', cfg.repoDelistNonce );
+			body.append( 'id', id );
+
+			fetch( cfg.ajaxurl, {
+				method:      'POST',
+				credentials: 'same-origin',
+				body:        body,
+			} )
+				.then( function ( res ) {
+					return res.json();
+				} )
+				.then( function ( json ) {
+					if ( json && json.success ) {
+						window.location.reload();
+						return;
+					}
+					btn.disabled = false;
+					window.alert( json && json.data && json.data.message ? json.data.message : 'Request failed.' );
+				} )
+				.catch( function () {
+					btn.disabled = false;
+					window.alert( 'Network error.' );
+				} );
+		} );
+	} );
 
 	/* -------------------------------------------------------------------------
 	   Per-row Remove
