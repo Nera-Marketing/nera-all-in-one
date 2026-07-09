@@ -1,0 +1,19 @@
+{
+	"name": "Nera All In One",
+	"slug": "nera-all-in-one",
+	"version": "0.1.0",
+	"homepage": "https://github.com/Nera-Marketing/nera-all-in-one",
+	"download_url": "https://github.com/Nera-Marketing/nera-all-in-one/releases/download/v0.1.0/nera-all-in-one-0.1.0.zip",
+	"author": "Nera",
+	"author_homepage": "https://github.com/Nera-Marketing",
+	"requires": "6.0",
+	"tested": "6.8",
+	"requires_php": "7.4",
+	"last_updated": "2026-07-09 15:56:00",
+	"upgrade_notice": "Update to the latest release for bug fixes and catalog improvements.",
+	"sections": {
+		"description": "<p>Unified manager for Nera internal plugins + licensing. Loads feature modules gated by license tier.</p>",
+		"installation": "<p>Upload and activate <strong>Nera All In One</strong>, then use the admin screens to manage catalog plugins and licensing.</p>",
+		"changelog": "<p>Release notes: <a href=\"https://github.com/Nera-Marketing/nera-all-in-one/releases\">GitHub releases</a>.</p>"
+	}
+}

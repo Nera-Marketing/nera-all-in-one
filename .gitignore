@@ -6,6 +6,8 @@
 # Dependencies / build
 /vendor/
 /node_modules/
+*.zip
+nera-all-in-one-*.zip
 
 # OS / editor
 .DS_Store
