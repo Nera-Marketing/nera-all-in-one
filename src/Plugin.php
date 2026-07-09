@@ -105,8 +105,7 @@ final class Plugin {
 
 		$screens = array(
 			'\\Nera\\AllInOne\\Admin\\Dashboard',
-			'\\Nera\\AllInOne\\Admin\\Licensing',
-			'\\Nera\\AllInOne\\Admin\\Modules_Screen',
+			'\\Nera\\AllInOne\\Admin\\Manage_Screen',
 			'\\Nera\\AllInOne\\Admin\\Module_Toggle',
 			'\\Nera\\AllInOne\\Admin\\Install_Controller',
 			'\\Nera\\AllInOne\\Admin\\Plugin_Details',

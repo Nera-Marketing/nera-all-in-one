@@ -3,7 +3,7 @@
  * Plugin manifest loader.
  *
  * Source of truth for the Nera plugin catalog: which plugins exist, their
- * install slug + main file, the GitHub repo to install from, tier, category and
+ * install slug + main file, the GitHub repo to install from, tier and
  * presentation metadata. Fetched from a central JSON (NERA_AIO_MANIFEST_URL),
  * cached, and backed by a bundled fallback so the dashboard always renders.
  *
@@ -41,7 +41,6 @@ final class Manifest {
 		'name'      => '',
 		'tagline'   => '',
 		'icon'      => '🔌',
-		'category'  => 'Misc',
 		'accent'    => '#64748b',
 		'min_tier'  => 'free',
 		'slug'      => '',

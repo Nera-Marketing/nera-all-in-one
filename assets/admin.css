@@ -3,7 +3,7 @@
 /**
  * Nera All In One — Admin styles (light refined).
  * No build step. Plain CSS. Everything visual is scoped under .nera-aio-app so it
- * never leaks into wp-admin chrome. Modal + tier-badge classes are preserved for JS.
+ * never leaks into wp-admin chrome. Modal classes are shared with admin.js.
  */
 
 .nera-aio-wrap {
@@ -62,26 +62,6 @@
 	font-size: 13.5px;
 	font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 	letter-spacing: 0.01em;
-}
-
-.nera-aio-hero__aside {
-	display: flex;
-	flex-direction: column;
-	align-items: flex-end;
-	gap: 12px;
-}
-
-.nera-aio-hero__pills {
-	display: flex;
-	gap: 8px;
-}
-
-.nera-aio-hero__actions {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	flex-wrap: wrap;
-	justify-content: flex-end;
 }
 
 /* =========================================================================
@@ -311,32 +291,8 @@
 }
 
 /* =========================================================================
-   Panels (License page)
+   Inline notices
    ========================================================================= */
-
-.nera-aio-panel {
-	background: var(--nera-surface);
-	border: 1px solid var(--nera-line);
-	border-radius: 12px;
-	padding: 20px 24px;
-	margin-top: 18px;
-	max-width: 640px;
-	box-shadow: 0 1px 2px rgba( 16, 24, 40, 0.06 );
-}
-
-.nera-aio-panel h2 {
-	margin-top: 0;
-	font-family: "Space Grotesk", system-ui, sans-serif;
-	font-size: 15px;
-	font-weight: 700;
-	color: var(--nera-ink);
-}
-
-.nera-aio-source {
-	color: var(--nera-muted);
-	font-size: 12px;
-	font-family: "JetBrains Mono", ui-monospace, monospace;
-}
 
 .nera-aio-inline-notice {
 	font-size: 13px;
@@ -344,10 +300,6 @@
 
 .nera-aio-inline-notice.is-success { color: #15803d; }
 .nera-aio-inline-notice.is-error { color: #b32d2e; }
-
-.nera-aio-demo-notice {
-	margin: 12px 0 !important;
-}
 
 /* =========================================================================
    Badges — base
@@ -365,20 +317,6 @@
 	white-space: nowrap;
 	letter-spacing: 0.03em;
 	font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
-}
-
-/* Category badge — accent-tinted */
-.nera-aio-badge--cat {
-	text-transform: uppercase;
-	font-size: 10px;
-	letter-spacing: 0.09em;
-	border-radius: 6px;
-	color: #475569; /* fallback */
-	color: color-mix( in srgb, var(--nera-accent) 72%, #1e293b );
-	background: rgba( 100, 116, 139, 0.1 ); /* fallback */
-	background: color-mix( in srgb, var(--nera-accent) 12%, #ffffff );
-	border: 1px solid rgba( 100, 116, 139, 0.22 );
-	border-color: color-mix( in srgb, var(--nera-accent) 30%, #ffffff );
 }
 
 /* Status pills */
@@ -443,43 +381,7 @@
 }
 
 /* =========================================================================
-   Tier badges
-   ========================================================================= */
-
-.nera-aio-badge--tier {
-	border-radius: 6px;
-	font-size: 10px;
-	text-transform: uppercase;
-}
-
-.nera-aio-badge--tier-free {
-	background-color: #eef1f5;
-	color: #475569;
-	border: 1px solid #d4dbe4;
-}
-
-.nera-aio-badge--tier-pro {
-	background-color: #ede9fe;
-	color: #5b21b6;
-	border: 1px solid #d6c9fb;
-}
-
-.nera-aio-badge--tier-agency {
-	background-color: #fde7f3;
-	color: #9d174d;
-	border: 1px solid #fbcfe8;
-}
-
-.nera-aio-badge--demo {
-	background-color: #fef3c7;
-	color: #854d0e;
-	border: 1px solid #fde68a;
-	font-size: 10px;
-	text-transform: uppercase;
-}
-
-/* =========================================================================
-   Upgrade modal (unchanged behaviour; refined styling)
+   Modal base (shared by the details modal)
    ========================================================================= */
 
 .nera-aio-modal {
@@ -534,25 +436,6 @@
 	color: #0f172a;
 }
 
-.nera-aio-demo-key-row {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	margin: 14px 0;
-}
-
-.nera-aio-demo-key {
-	flex: 1;
-	background: #f1f5f9;
-	border: 1px solid #cbd5e1;
-	border-radius: 6px;
-	padding: 8px 12px;
-	font-size: 13px;
-	font-family: "JetBrains Mono", ui-monospace, monospace;
-	word-break: break-all;
-	color: #0f172a;
-}
-
 /* =========================================================================
    Responsive
    ========================================================================= */
@@ -560,9 +443,6 @@
 @media ( max-width: 600px ) {
 	.nera-aio-hero {
 		flex-direction: column;
-		align-items: flex-start;
-	}
-	.nera-aio-hero__aside {
 		align-items: flex-start;
 	}
 }
@@ -575,12 +455,12 @@
 	cursor: pointer;
 }
 
-/* Left-align the head so the category badge + info button sit on the right. */
+/* Left-align the head so the info button sits on the right. */
 .nera-aio-card__head {
 	justify-content: flex-start;
 }
 
-.nera-aio-card__head .nera-aio-badge--cat {
+.nera-aio-card__head .nera-aio-card__info {
 	margin-left: auto;
 }
 
@@ -815,4 +695,142 @@
 .nera-aio-details__actions .nera-aio-remove-btn:disabled {
 	opacity: 0.7;
 	cursor: default;
+}
+
+/* =========================================================================
+   Manage table + bulk bar
+   ========================================================================= */
+
+.nera-aio-bulkbar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-top: 18px;
+}
+
+.nera-aio-table-wrap {
+	background: var(--nera-surface);
+	border: 1px solid var(--nera-line);
+	border-radius: 12px;
+	box-shadow: 0 1px 2px rgba( 16, 24, 40, 0.06 );
+	margin-top: 14px;
+	overflow-x: auto;
+}
+
+.nera-aio-table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.nera-aio-table th {
+	font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: var(--nera-ink-soft);
+	text-align: left;
+	padding: 12px 14px;
+	border-bottom: 1px solid var(--nera-line);
+}
+
+.nera-aio-table td {
+	padding: 12px 14px;
+	border-top: 1px solid var(--nera-line);
+	vertical-align: middle;
+}
+
+.nera-aio-table tbody tr:hover {
+	background: #f8fafc;
+}
+
+.nera-aio-table__check {
+	width: 36px;
+}
+
+/* Flex lives on an inner wrapper — a flexed <td> stops being a table-cell
+   and breaks row alignment. */
+.nera-aio-table__cellflex {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.nera-aio-card__icon--sm {
+	width: 34px;
+	height: 34px;
+	font-size: 17px;
+	flex-shrink: 0;
+}
+
+.nera-aio-table__id {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.nera-aio-table__name {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-family: "Space Grotesk", system-ui, sans-serif;
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--nera-ink);
+}
+
+.nera-aio-table__tagline {
+	font-size: 12px;
+	color: var(--nera-ink-soft);
+}
+
+.nera-aio-table__ver {
+	font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+	font-size: 12px;
+	color: var(--nera-ink-soft);
+	white-space: nowrap;
+}
+
+.nera-aio-table__ver.is-newer {
+	color: #1e40af;
+	font-weight: 600;
+}
+
+.nera-aio-table__actions {
+	white-space: nowrap;
+}
+
+.nera-aio-row-remove {
+	color: #b42318;
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.nera-aio-row-remove:hover,
+.nera-aio-row-remove:focus {
+	color: #d92d20;
+	text-decoration: underline;
+}
+
+/* Bulk-run states */
+.nera-aio-table tr.is-pending {
+	opacity: 0.55;
+}
+
+.nera-aio-table tr.is-error {
+	background: #fef2f2;
+}
+
+.nera-aio-table.is-bulk-running .nera-aio-table__actions,
+.nera-aio-table.is-bulk-running .nera-aio-switch {
+	pointer-events: none;
+	opacity: 0.6;
+}
+
+@media ( max-width: 782px ) {
+	/* Narrow screens: drop the tagline; the wrap scrolls horizontally for
+	   the remaining columns. */
+	.nera-aio-table__tagline {
+		display: none;
+	}
 }

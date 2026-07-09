@@ -3,8 +3,7 @@
  * Admin dashboard overview screen.
  *
  * Registers the top-level "Nera All In One" admin menu entry and renders the
- * Overview page: active tier, demo-mode badge, module status counts, and quick
- * links to the Licensing and Modules sub-screens.
+ * Overview page: plugin status counts and the shared plugin card grid.
  *
  * @package Nera\AllInOne\Admin
  */
@@ -128,20 +127,17 @@ final class Dashboard {
 
 		$is_manager = Managers::is_manager();
 
-		// Mutating nonces and the demo key are withheld from non-managers
-		// (read-only dashboard); admin.js already no-ops on missing keys.
+		// Mutating nonces are withheld from non-managers (read-only
+		// dashboard); admin.js already no-ops on missing keys.
 		wp_localize_script(
 			'nera-aio-admin',
 			'neraAioAdmin',
 			array(
 				'ajaxurl'      => admin_url( 'admin-ajax.php' ),
-				'checkNonce'   => $is_manager ? wp_create_nonce( 'nera_aio_check_now' ) : '',
 				'toggleNonce'  => $is_manager ? wp_create_nonce( 'nera_aio_toggle' ) : '',
 				'installNonce' => $is_manager ? wp_create_nonce( 'nera_aio_install' ) : '',
 				'detailsNonce' => wp_create_nonce( 'nera_aio_details' ),
 				'removeNonce'  => $is_manager ? wp_create_nonce( 'nera_aio_remove' ) : '',
-				'demoKey'      => ( $is_manager && $this->license->is_demo_mode() ) ? $this->license->get_demo_key() : '',
-				'demoMode'     => $this->license->is_demo_mode(),
 			)
 		);
 	}
@@ -160,12 +156,8 @@ final class Dashboard {
 			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'nera-all-in-one' ) );
 		}
 
-		$tier          = $this->entitlements->current_tier();
-		$is_demo       = $this->license->is_demo_mode();
-		$is_manager    = Managers::is_manager();
-		$counts        = Plugin_Catalog::counts( $this->entitlements, $this->registry );
-		$total         = count( Plugin_Catalog::items() );
-		$licensing_url = admin_url( 'admin.php?page=nera-aio-licensing' );
+		$counts = Plugin_Catalog::counts( $this->entitlements, $this->registry );
+		$total  = count( Plugin_Catalog::items() );
 		?>
 		<div class="wrap nera-aio-wrap">
 			<div class="nera-aio-app">
@@ -177,32 +169,14 @@ final class Dashboard {
 							<?php
 							echo esc_html(
 								sprintf(
-									/* translators: 1: total plugins, 2: active count, 3: locked count */
-									__( '%1$d plugins · %2$d active · %3$d locked', 'nera-all-in-one' ),
+									/* translators: 1: total plugins, 2: active count */
+									__( '%1$d plugins · %2$d active', 'nera-all-in-one' ),
 									$total,
-									$counts['active'] + $counts['standalone'],
-									$counts['locked']
+									$counts['active'] + $counts['standalone']
 								)
 							);
 							?>
 						</p>
-					</div>
-					<div class="nera-aio-hero__aside">
-						<div class="nera-aio-hero__pills">
-							<span class="nera-aio-badge nera-aio-badge--tier nera-aio-badge--tier-<?php echo esc_attr( $tier ); ?>">
-								<?php echo esc_html( strtoupper( $tier ) ); ?>
-							</span>
-							<?php if ( $is_demo ) : ?>
-								<span class="nera-aio-badge nera-aio-badge--demo"><?php echo esc_html__( 'DEMO MODE', 'nera-all-in-one' ); ?></span>
-							<?php endif; ?>
-						</div>
-						<?php if ( $is_manager ) : ?>
-							<div class="nera-aio-hero__actions">
-								<a href="<?php echo esc_url( $licensing_url ); ?>" class="button button-primary"><?php echo esc_html__( 'Manage License', 'nera-all-in-one' ); ?></a>
-								<button type="button" id="nera-aio-check-now" class="button button-secondary"><?php echo esc_html__( 'Check license now', 'nera-all-in-one' ); ?></button>
-								<span id="nera-aio-check-result" class="nera-aio-inline-notice" style="display:none;"></span>
-							</div>
-						<?php endif; ?>
 					</div>
 				</div>
 
@@ -211,7 +185,6 @@ final class Dashboard {
 			</div>
 		</div>
 		<?php
-		Plugin_Catalog::render_upgrade_modal( $this->license );
 		Plugin_Catalog::render_details_modal();
 	}
 

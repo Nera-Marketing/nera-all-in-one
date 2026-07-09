@@ -141,28 +141,55 @@ final class Installer {
 		require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
 
+		// Snapshot prior state: an update must not change the active state,
+		// and a fresh install auto-activates (see below).
+		$plugin_file   = $slug . '/' . ( isset( $entry['main_file'] ) ? $entry['main_file'] : $slug . '.php' );
+		$was_installed = is_dir( WP_PLUGIN_DIR . '/' . $slug );
+		$was_active    = $was_installed && is_plugin_active( $plugin_file );
+
+		// Git-clone installs carry read-only files (git object files are mode
+		// 0444) that the upgrader's clear-destination step cannot delete, which
+		// aborts the whole update. Make the old folder writable before replacing.
+		if ( $was_installed ) {
+			self::make_writable( WP_PLUGIN_DIR . '/' . $slug );
+		}
+
 		// Force the unpacked folder to the canonical slug.
 		$rename = self::source_selection_renamer( $slug );
 		add_filter( 'upgrader_source_selection', $rename, 10, 4 );
 
-		$upgrader = new \Plugin_Upgrader( new \Automatic_Upgrader_Skin() );
+		$skin     = new \Automatic_Upgrader_Skin();
+		$upgrader = new \Plugin_Upgrader( $skin );
 		$result   = $upgrader->install( $zip, array( 'overwrite_package' => true ) );
 
 		remove_filter( 'upgrader_source_selection', $rename, 10 );
 		self::flush( $repo );
 
-		if ( is_wp_error( $result ) ) {
-			return $result;
-		}
 		if ( true !== $result ) {
-			return new \WP_Error( 'nera_aio_install_failed', __( 'Install failed.', 'nera-all-in-one' ) );
+			// Core's Plugin_Upgrader::install() returns null for most failures
+			// inside install_package() (its ->result is only set on success);
+			// the real WP_Error text only reaches the skin. Surface it.
+			$messages = implode( ' — ', array_filter( array_map( 'wp_strip_all_tags', (array) $skin->get_upgrade_messages() ) ) );
+			Logger::log( 'install failed for ' . $slug . ': ' . $messages );
+
+			if ( is_wp_error( $result ) && '' !== $result->get_error_message() ) {
+				return $result;
+			}
+			return new \WP_Error(
+				'nera_aio_install_failed',
+				'' !== $messages ? $messages : __( 'Install failed.', 'nera-all-in-one' )
+			);
+		}
+
+		// Updating an inactive plugin must leave it inactive.
+		if ( $was_installed && ! $was_active ) {
+			return true;
 		}
 
 		// Activate the freshly installed plugin. Activation runs the plugin's
 		// main file, which can fatal on a broken/incompatible plugin — catch it
 		// so a successful install is never turned into a white screen. The card
 		// then shows "Installed" (inactive) and the user can toggle it on.
-		$plugin_file = $slug . '/' . ( isset( $entry['main_file'] ) ? $entry['main_file'] : $slug . '.php' );
 		try {
 			$activate = activate_plugin( $plugin_file );
 			if ( is_wp_error( $activate ) ) {
@@ -221,6 +248,29 @@ final class Installer {
 		}
 		// Fallback: source zipball (folder gets renamed by source_selection).
 		return isset( $rel['zipball_url'] ) ? (string) $rel['zipball_url'] : '';
+	}
+
+	/**
+	 * Recursively add owner write permission to every file and directory so a
+	 * subsequent delete/overwrite by the upgrader cannot fail on read-only
+	 * entries (e.g. .git object files in a development clone).
+	 *
+	 * @param string $dir Absolute directory path.
+	 * @return void
+	 */
+	private static function make_writable( $dir ) {
+		if ( ! is_dir( $dir ) ) {
+			return;
+		}
+		$iterator = new \RecursiveIteratorIterator(
+			new \RecursiveDirectoryIterator( $dir, \FilesystemIterator::SKIP_DOTS ),
+			\RecursiveIteratorIterator::SELF_FIRST
+		);
+		foreach ( $iterator as $item ) {
+			if ( ! $item->isWritable() ) {
+				@chmod( $item->getPathname(), $item->isDir() ? 0755 : 0644 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			}
+		}
 	}
 
 	/**

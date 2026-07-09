@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin catalog — the manifest of all Nera plugins shown on the dashboard, plus
- * the shared card-grid and upgrade-modal renderers reused by the Overview and
- * Modules screens.
+ * the shared card-grid and details-modal renderers reused by the Overview and
+ * Manage screens.
  *
  * @package Nera\AllInOne\Admin
  */
@@ -12,7 +12,6 @@ namespace Nera\AllInOne\Admin;
 use Nera\AllInOne\Catalog\Manifest;
 use Nera\AllInOne\Entitlements\Entitlements;
 use Nera\AllInOne\Install\Installer;
-use Nera\AllInOne\License\License_Client;
 use Nera\AllInOne\Modules\Module_Registry;
 use Nera\AllInOne\Support\Managers;
 
@@ -37,7 +36,7 @@ final class Plugin_Catalog {
 	 * The Nera plugin catalog, sourced from the manifest (remote-with-fallback)
 	 * and mapped to the keys the renderer/toggle layer expects.
 	 *
-	 * Each entry: id, name, tagline, icon, category, accent, min_tier,
+	 * Each entry: id, name, tagline, icon, accent, min_tier,
 	 *   legacy_folder (== install slug, kept for compat), slug, main_file,
 	 *   gh_repo|null, deps[], module_id|null
 	 *
@@ -51,7 +50,6 @@ final class Plugin_Catalog {
 				'name'          => $m['name'],
 				'tagline'       => $m['tagline'],
 				'icon'          => $m['icon'],
-				'category'      => $m['category'],
 				'accent'        => $m['accent'],
 				'min_tier'      => $m['min_tier'],
 				'legacy_folder' => $m['slug'],
@@ -302,7 +300,6 @@ final class Plugin_Catalog {
 
 			echo '<div class="nera-aio-card__head">';
 			echo '<span class="nera-aio-card__icon" aria-hidden="true">' . esc_html( $entry['icon'] ) . '</span>';
-			echo '<span class="nera-aio-badge nera-aio-badge--cat">' . esc_html( $entry['category'] ) . '</span>';
 			printf(
 				'<button type="button" class="nera-aio-card__info" data-id="%1$s" aria-label="%2$s">%3$s</button>',
 				esc_attr( $entry['id'] ),
@@ -316,7 +313,6 @@ final class Plugin_Catalog {
 			echo '<p class="nera-aio-card__desc">' . esc_html( $entry['tagline'] ) . '</p>';
 
 			echo '<div class="nera-aio-card__badges">';
-			echo '<span class="nera-aio-badge nera-aio-badge--tier nera-aio-badge--tier-' . esc_attr( $entry['min_tier'] ) . '">' . esc_html( strtoupper( $entry['min_tier'] ) ) . '</span>';
 			echo '<span class="nera-aio-badge nera-aio-badge--' . esc_attr( $statuskey ) . '">' . esc_html( $st['label'] ) . '</span>';
 			echo '</div>';
 
@@ -331,18 +327,20 @@ final class Plugin_Catalog {
 	}
 
 	/**
-	 * Echo the per-card action control — the store state machine:
+	 * Echo the per-entry action control — the store state machine:
 	 *
 	 *   module-backed (wrapped)      → toggle (no install needed).
-	 *   installed plugin             → toggle + version <select> + Update if newer.
+	 *   installed plugin             → toggle + Update if newer.
 	 *   not installed, no gh_repo    → "Coming soon".
 	 *   not installed, entitled      → [Install].
-	 *   not installed, not entitled  → [Get license] (opens modal).
+	 *   not installed, not entitled  → "Contact Nera" hint.
 	 *
 	 * Server mirrors the gate: Install/Update require entitlement
 	 * (Install_Controller); disabling via the toggle never does (Module_Toggle).
 	 * All mutating controls additionally require a manager user — non-managers
 	 * see disabled switches / muted hints (read-only dashboard).
+	 *
+	 * Public: reused by the Manage screen's table rows.
 	 *
 	 * @param array           $entry
 	 * @param string          $statuskey Status key from self::status().
@@ -351,7 +349,7 @@ final class Plugin_Catalog {
 	 * @param bool            $readonly  True for non-manager viewers.
 	 * @return void
 	 */
-	private static function action_html( array $entry, $statuskey, Entitlements $e, Module_Registry $r, $readonly = false ) {
+	public static function action_html( array $entry, $statuskey, Entitlements $e, Module_Registry $r, $readonly = false ) {
 		$kind     = self::backing( $entry );
 		$entitled = $e->is_entitled( $entry['min_tier'] );
 
@@ -394,8 +392,8 @@ final class Plugin_Catalog {
 			return;
 		}
 
-		// Paid plugin, not entitled — route to the contact/upgrade modal.
-		echo '<button type="button" class="button button-primary nera-aio-upgrade-btn">' . esc_html__( 'Get license', 'nera-all-in-one' ) . '</button>';
+		// Paid plugin, not entitled — licensing UI is retired, point at Nera.
+		echo '<span class="nera-aio-muted">' . esc_html__( 'Contact Nera', 'nera-all-in-one' ) . '</span>';
 	}
 
 	/**
@@ -453,42 +451,6 @@ final class Plugin_Catalog {
 			$on ? esc_html__( 'On', 'nera-all-in-one' ) : esc_html__( 'Off', 'nera-all-in-one' ),
 			$disabled ? ' disabled' : ''
 		);
-	}
-
-	/**
-	 * Echo the hidden Upgrade modal. Element IDs match assets/admin.js exactly.
-	 *
-	 * @param License_Client $license
-	 * @return void
-	 */
-	public static function render_upgrade_modal( License_Client $license ) {
-		// Prints the demo key into the DOM — managers only.
-		if ( ! Managers::is_manager() ) {
-			return;
-		}
-		$is_demo  = $license->is_demo_mode();
-		$demo_key = $is_demo ? $license->get_demo_key() : '';
-		?>
-		<div id="nera-aio-upgrade-modal" class="nera-aio-modal" style="display:none;" aria-modal="true" role="dialog" aria-label="<?php echo esc_attr__( 'Upgrade to PRO', 'nera-all-in-one' ); ?>">
-			<div class="nera-aio-modal__overlay" id="nera-aio-modal-overlay"></div>
-			<div class="nera-aio-modal__card">
-				<button type="button" class="nera-aio-modal__close" id="nera-aio-modal-close" aria-label="<?php echo esc_attr__( 'Close', 'nera-all-in-one' ); ?>">&times;</button>
-				<h2><?php echo esc_html__( 'Unlock PRO features', 'nera-all-in-one' ); ?></h2>
-				<?php if ( $is_demo && $demo_key ) : ?>
-					<p><?php echo esc_html__( 'This is a demo environment. Use the key below to try PRO features:', 'nera-all-in-one' ); ?></p>
-					<div class="nera-aio-demo-key-row">
-						<code id="nera-aio-demo-key-display" class="nera-aio-demo-key"><?php echo esc_html( $demo_key ); ?></code>
-						<button type="button" id="nera-aio-copy-demo-key" class="button button-secondary"><?php echo esc_html__( 'Copy', 'nera-all-in-one' ); ?></button>
-					</div>
-					<p class="description"><?php echo esc_html__( 'Paste it on the License page and click Apply.', 'nera-all-in-one' ); ?></p>
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=nera-aio-licensing' ) ); ?>" id="nera-aio-use-demo-key" class="button button-primary"><?php echo esc_html__( 'Go to License page', 'nera-all-in-one' ); ?></a>
-				<?php else : ?>
-					<p><?php echo esc_html__( 'Contact Nera to obtain a PRO or Agency license key, then enter it on the License page.', 'nera-all-in-one' ); ?></p>
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=nera-aio-licensing' ) ); ?>" class="button button-primary"><?php echo esc_html__( 'Go to License page', 'nera-all-in-one' ); ?></a>
-				<?php endif; ?>
-			</div>
-		</div>
-		<?php
 	}
 
 	/**

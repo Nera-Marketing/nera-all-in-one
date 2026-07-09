@@ -5,104 +5,17 @@
  * via wp_enqueue_script( ..., true ) (footer).
  *
  * Globals provided by wp_localize_script('nera-aio-admin', 'neraAioAdmin', {...}):
- *   neraAioAdmin.ajaxurl     — admin-ajax.php URL
- *   neraAioAdmin.checkNonce  — nonce for nera_aio_check_now
- *   neraAioAdmin.toggleNonce — nonce for nera_aio_toggle
+ *   neraAioAdmin.ajaxurl      — admin-ajax.php URL
+ *   neraAioAdmin.toggleNonce  — nonce for nera_aio_toggle
  *   neraAioAdmin.installNonce — nonce for nera_aio_install
- *   neraAioAdmin.demoKey     — demo key string (empty when not demo mode)
- *   neraAioAdmin.demoMode    — boolean
+ *   neraAioAdmin.detailsNonce — nonce for nera_aio_details
+ *   neraAioAdmin.removeNonce  — nonce for nera_aio_remove
+ *
+ * Mutating nonces are empty strings for non-manager viewers; every mutating
+ * handler no-ops when its nonce is missing.
  */
 ( function () {
 	'use strict';
-
-	/* -------------------------------------------------------------------------
-	   Helpers
-	   ------------------------------------------------------------------------- */
-
-	/**
-	 * Show a temporary inline notice next to an element.
-	 *
-	 * @param {HTMLElement} el
-	 * @param {string}      message
-	 * @param {string}      type    'success' | 'error'
-	 */
-	function showInlineNotice( el, message, type ) {
-		if ( ! el ) {
-			return;
-		}
-		el.textContent   = message;
-		el.className     = 'nera-aio-inline-notice is-' + type;
-		el.style.display = 'inline';
-
-		setTimeout( function () {
-			el.style.display = 'none';
-		}, 6000 );
-	}
-
-	/* -------------------------------------------------------------------------
-	   Check license now (AJAX)
-	   ------------------------------------------------------------------------- */
-
-	var checkBtn = document.getElementById( 'nera-aio-check-now' );
-	if ( checkBtn ) {
-		checkBtn.addEventListener( 'click', function () {
-			var cfg = window.neraAioAdmin || {};
-			if ( ! cfg.ajaxurl || ! cfg.checkNonce ) {
-				return;
-			}
-
-			checkBtn.disabled    = true;
-			checkBtn.textContent = 'Checking…';
-
-			var body = new URLSearchParams();
-			body.append( 'action', 'nera_aio_check_now' );
-			body.append( '_ajax_nonce', cfg.checkNonce );
-
-			fetch( cfg.ajaxurl, {
-				method:      'POST',
-				credentials: 'same-origin',
-				body:        body,
-			} )
-				.then( function ( res ) {
-					return res.json();
-				} )
-				.then( function ( json ) {
-					checkBtn.disabled    = false;
-					checkBtn.textContent = 'Check license now';
-
-					var resultEl = document.getElementById( 'nera-aio-check-result' );
-
-					if ( json && json.success && json.data ) {
-						var tier   = json.data.tier   || '';
-						var source = json.data.source || '';
-
-						// Update on-page tier display if present.
-						var tierEls = document.querySelectorAll( '.nera-aio-badge--tier' );
-						tierEls.forEach( function ( el ) {
-							// Swap tier modifier class.
-							el.className = el.className.replace( /nera-aio-badge--tier-\S+/, '' ).trim();
-							el.classList.add( 'nera-aio-badge--tier-' + tier );
-							el.textContent = tier.toUpperCase();
-						} );
-
-						var msg = 'Tier: ' + tier.toUpperCase();
-						if ( source ) {
-							msg += ' (' + source + ')';
-						}
-						showInlineNotice( resultEl, msg, 'success' );
-					} else {
-						var errMsg = ( json && json.data && json.data.message ) ? json.data.message : 'Check failed.';
-						showInlineNotice( resultEl, errMsg, 'error' );
-					}
-				} )
-				.catch( function () {
-					checkBtn.disabled    = false;
-					checkBtn.textContent = 'Check license now';
-					var resultEl = document.getElementById( 'nera-aio-check-result' );
-					showInlineNotice( resultEl, 'Network error.', 'error' );
-				} );
-		} );
-	}
 
 	/* -------------------------------------------------------------------------
 	   Module on/off toggles (AJAX)
@@ -238,148 +151,6 @@
 		} );
 	} );
 
-	/* -------------------------------------------------------------------------
-	   Upgrade modal — open / close / copy / use-key
-	   ------------------------------------------------------------------------- */
-
-	var modal = document.getElementById( 'nera-aio-upgrade-modal' );
-
-	/**
-	 * Open the modal.
-	 */
-	function openModal() {
-		if ( ! modal ) {
-			return;
-		}
-		modal.style.display = 'block';
-		document.body.style.overflow = 'hidden';
-
-		// Move focus to the close button for accessibility.
-		var closeBtn = document.getElementById( 'nera-aio-modal-close' );
-		if ( closeBtn ) {
-			closeBtn.focus();
-		}
-	}
-
-	/**
-	 * Close the modal.
-	 */
-	function closeModal() {
-		if ( ! modal ) {
-			return;
-		}
-		modal.style.display         = 'none';
-		document.body.style.overflow = '';
-	}
-
-	// Open via "Upgrade" buttons on the Modules screen.
-	var upgradeBtns = document.querySelectorAll( '.nera-aio-upgrade-btn' );
-	upgradeBtns.forEach( function ( btn ) {
-		btn.addEventListener( 'click', openModal );
-	} );
-
-	// Open via explicit "Get Demo PRO Key" button (Licensing screen).
-	var openUpgradeBtn = document.getElementById( 'nera-aio-open-upgrade' );
-	if ( openUpgradeBtn ) {
-		openUpgradeBtn.addEventListener( 'click', openModal );
-	}
-
-	// Close via X button.
-	var closeBtn = document.getElementById( 'nera-aio-modal-close' );
-	if ( closeBtn ) {
-		closeBtn.addEventListener( 'click', closeModal );
-	}
-
-	// Close via overlay click.
-	var overlay = document.getElementById( 'nera-aio-modal-overlay' );
-	if ( overlay ) {
-		overlay.addEventListener( 'click', closeModal );
-	}
-
-	// Close on Escape key.
-	document.addEventListener( 'keydown', function ( e ) {
-		if ( 'Escape' === e.key && modal && 'none' !== modal.style.display ) {
-			closeModal();
-		}
-	} );
-
-	// Copy demo key.
-	var copyBtn = document.getElementById( 'nera-aio-copy-demo-key' );
-	if ( copyBtn ) {
-		copyBtn.addEventListener( 'click', function () {
-			var cfg     = window.neraAioAdmin || {};
-			var demoKey = cfg.demoKey || '';
-			var keyEl   = document.getElementById( 'nera-aio-demo-key-display' );
-			var keyText = keyEl ? keyEl.textContent.trim() : demoKey;
-
-			if ( ! keyText ) {
-				return;
-			}
-
-			if ( navigator.clipboard && navigator.clipboard.writeText ) {
-				navigator.clipboard.writeText( keyText ).then( function () {
-					copyBtn.textContent = 'Copied!';
-					setTimeout( function () {
-						copyBtn.textContent = 'Copy';
-					}, 2000 );
-				} ).catch( function () {
-					fallbackCopy( keyText );
-				} );
-			} else {
-				fallbackCopy( keyText );
-			}
-		} );
-	}
-
-	/**
-	 * Fallback clipboard copy using a temp textarea.
-	 *
-	 * @param {string} text
-	 */
-	function fallbackCopy( text ) {
-		var ta       = document.createElement( 'textarea' );
-		ta.value     = text;
-		ta.style.position = 'fixed';
-		ta.style.opacity  = '0';
-		document.body.appendChild( ta );
-		ta.focus();
-		ta.select();
-		try {
-			document.execCommand( 'copy' );
-			if ( copyBtn ) {
-				copyBtn.textContent = 'Copied!';
-				setTimeout( function () {
-					copyBtn.textContent = 'Copy';
-				}, 2000 );
-			}
-		} catch ( err ) {
-			// Silently fail.
-		}
-		document.body.removeChild( ta );
-	}
-
-	// "Use this key" — fill the license key input if present on this page
-	// (only meaningful on Licensing screen where the input exists).
-	var useKeyBtn = document.getElementById( 'nera-aio-use-demo-key' );
-	if ( useKeyBtn ) {
-		// Only wire up if there's a key input on this page (Licensing screen).
-		var keyInput = document.getElementById( 'nera_aio_key' );
-		if ( keyInput ) {
-			useKeyBtn.addEventListener( 'click', function () {
-				var cfg     = window.neraAioAdmin || {};
-				var demoKey = cfg.demoKey || '';
-				var keyEl   = document.getElementById( 'nera-aio-demo-key-display' );
-				var keyText = keyEl ? keyEl.textContent.trim() : demoKey;
-
-				if ( keyText ) {
-					keyInput.value = keyText;
-					closeModal();
-					keyInput.focus();
-				}
-			} );
-		}
-	}
-
 } )();
 
 /* =========================================================================
@@ -456,12 +227,6 @@
 		head.appendChild( titleRow );
 
 		var badges = el( 'div', 'nera-aio-details__badges' );
-		if ( d.category ) {
-			badges.appendChild( el( 'span', 'nera-aio-badge nera-aio-badge--cat', d.category ) );
-		}
-		if ( d.tier ) {
-			badges.appendChild( el( 'span', 'nera-aio-badge nera-aio-badge--tier nera-aio-badge--tier-' + d.tier, d.tier.toUpperCase() ) );
-		}
 		if ( d.status ) {
 			badges.appendChild( el( 'span', 'nera-aio-badge nera-aio-badge--' + ( d.status_key || '' ), d.status ) );
 		}
@@ -654,6 +419,357 @@
 		if ( 'Escape' === e.key && 'none' !== modal.style.display ) {
 			closeModal();
 		}
+	} );
+
+} )();
+
+/* =========================================================================
+   Manage table — select-all, bulk actions, per-row remove
+   ========================================================================= */
+( function () {
+	'use strict';
+
+	var table = document.getElementById( 'nera-aio-manage-table' );
+	if ( ! table ) {
+		return;
+	}
+
+	var checkAll  = document.getElementById( 'nera-aio-check-all' );
+	var actionSel = document.getElementById( 'nera-aio-bulk-action' );
+	var applyBtn  = document.getElementById( 'nera-aio-bulk-apply' );
+	var statusEl  = document.getElementById( 'nera-aio-bulk-status' );
+
+	/**
+	 * Show a temporary inline notice next to the bulk bar.
+	 *
+	 * @param {string} message
+	 * @param {string} type    'success' | 'error'
+	 */
+	function showStatus( message, type ) {
+		if ( ! statusEl ) {
+			return;
+		}
+		statusEl.textContent   = message;
+		statusEl.className     = 'nera-aio-inline-notice is-' + type;
+		statusEl.style.display = 'inline';
+	}
+
+	/* -------------------------------------------------------------------------
+	   Selection
+	   ------------------------------------------------------------------------- */
+
+	function rowChecks() {
+		return Array.prototype.slice.call( table.querySelectorAll( '.nera-aio-row-check' ) );
+	}
+
+	function selectedRows() {
+		return Array.prototype.slice.call( table.querySelectorAll( 'tbody tr' ) ).filter( function ( tr ) {
+			var cb = tr.querySelector( '.nera-aio-row-check' );
+			return cb && cb.checked;
+		} );
+	}
+
+	function syncCheckAll() {
+		if ( ! checkAll ) {
+			return;
+		}
+		var checks  = rowChecks();
+		var checked = checks.filter( function ( cb ) {
+			return cb.checked;
+		} ).length;
+
+		checkAll.checked       = checks.length > 0 && checked === checks.length;
+		checkAll.indeterminate = checked > 0 && checked < checks.length;
+	}
+
+	if ( checkAll ) {
+		checkAll.addEventListener( 'change', function () {
+			rowChecks().forEach( function ( cb ) {
+				cb.checked = checkAll.checked;
+			} );
+			checkAll.indeterminate = false;
+		} );
+	}
+
+	rowChecks().forEach( function ( cb ) {
+		cb.addEventListener( 'change', syncCheckAll );
+	} );
+
+	/* -------------------------------------------------------------------------
+	   Bulk runner
+	   ------------------------------------------------------------------------- */
+
+	/**
+	 * Whether the action makes sense for the row's current state. Select-all
+	 * may select anything; non-applicable rows are skipped, never errors.
+	 *
+	 * @param {string}      action
+	 * @param {HTMLElement} tr
+	 * @return {boolean}
+	 */
+	function isApplicable( action, tr ) {
+		var installed = '1' === tr.getAttribute( 'data-installed' );
+		var active    = '1' === tr.getAttribute( 'data-active' );
+		var hasRepo   = '1' === tr.getAttribute( 'data-has-repo' );
+		var hasUpdate = '1' === tr.getAttribute( 'data-has-update' );
+		var backing   = tr.getAttribute( 'data-backing' );
+		var status    = tr.getAttribute( 'data-status' );
+
+		switch ( action ) {
+			case 'activate':
+				return installed && ! active;
+			case 'deactivate':
+				return active;
+			case 'update':
+				return hasUpdate;
+			case 'install':
+				return ! installed && hasRepo && 'module' !== backing && 'locked' !== status;
+			case 'uninstall':
+				return installed && 'module' !== backing;
+			default:
+				return false;
+		}
+	}
+
+	/**
+	 * Map a bulk action + plugin id to the existing single-plugin AJAX request.
+	 *
+	 * @param {string} action
+	 * @param {string} id
+	 * @return {?URLSearchParams} Null when the required nonce is missing.
+	 */
+	function requestFor( action, id ) {
+		var cfg  = window.neraAioAdmin || {};
+		var body = new URLSearchParams();
+
+		if ( 'activate' === action || 'deactivate' === action ) {
+			if ( ! cfg.toggleNonce ) {
+				return null;
+			}
+			body.append( 'action', 'nera_aio_toggle' );
+			body.append( '_ajax_nonce', cfg.toggleNonce );
+			body.append( 'id', id );
+			body.append( 'enabled', 'activate' === action ? 1 : 0 );
+			return body;
+		}
+
+		if ( 'install' === action || 'update' === action ) {
+			if ( ! cfg.installNonce ) {
+				return null;
+			}
+			body.append( 'action', 'nera_aio_install' );
+			body.append( '_ajax_nonce', cfg.installNonce );
+			body.append( 'id', id ); // No 'ref' — installs the latest release.
+			return body;
+		}
+
+		if ( 'uninstall' === action ) {
+			if ( ! cfg.removeNonce ) {
+				return null;
+			}
+			body.append( 'action', 'nera_aio_remove' );
+			body.append( '_ajax_nonce', cfg.removeNonce );
+			body.append( 'id', id );
+			return body;
+		}
+
+		return null;
+	}
+
+	var VERBS = {
+		activate:   'Activating',
+		deactivate: 'Deactivating',
+		update:     'Updating',
+		install:    'Installing',
+		uninstall:  'Removing',
+	};
+
+	function runBulk() {
+		var cfg    = window.neraAioAdmin || {};
+		var action = actionSel ? actionSel.value : '';
+
+		if ( ! cfg.ajaxurl || ! action ) {
+			showStatus( 'Choose a bulk action first.', 'error' );
+			return;
+		}
+
+		var selected = selectedRows();
+		if ( ! selected.length ) {
+			showStatus( 'Select at least one plugin.', 'error' );
+			return;
+		}
+
+		var applicable = selected.filter( function ( tr ) {
+			return isApplicable( action, tr );
+		} );
+		var skipped = selected.length - applicable.length;
+
+		if ( ! applicable.length ) {
+			showStatus( 'Nothing to do — selected plugins are not applicable for this action.', 'error' );
+			return;
+		}
+
+		if ( 'uninstall' === action ) {
+			var names = applicable.map( function ( tr ) {
+				return '  ' + tr.getAttribute( 'data-name' );
+			} );
+			var ok = window.confirm(
+				'Permanently delete ' + applicable.length + ' plugin(s):\n' + names.join( '\n' ) +
+				'\n\nThis deactivates each plugin, deletes its files, and runs its uninstall routine. This cannot be undone.'
+			);
+			if ( ! ok ) {
+				return;
+			}
+		}
+
+		// Lock the UI for the duration of the run.
+		table.classList.add( 'is-bulk-running' );
+		if ( actionSel ) {
+			actionSel.disabled = true;
+		}
+		if ( applyBtn ) {
+			applyBtn.disabled = true;
+		}
+		if ( checkAll ) {
+			checkAll.disabled = true;
+		}
+		rowChecks().forEach( function ( cb ) {
+			cb.disabled = true;
+		} );
+
+		var results = [];
+
+		// Strictly sequential: plugin (de)activation mutates the shared
+		// active_plugins option — parallel requests would race.
+		function next( i ) {
+			if ( i >= applicable.length ) {
+				finish();
+				return;
+			}
+
+			var tr   = applicable[ i ];
+			var id   = tr.getAttribute( 'data-id' );
+			var name = tr.getAttribute( 'data-name' ) || id;
+			var body = requestFor( action, id );
+
+			if ( ! body ) {
+				results.push( { name: name, ok: false, message: 'Not permitted.' } );
+				next( i + 1 );
+				return;
+			}
+
+			tr.classList.add( 'is-pending' );
+			showStatus( ( i + 1 ) + '/' + applicable.length + ' — ' + VERBS[ action ] + ' ' + name + '…', 'success' );
+
+			fetch( cfg.ajaxurl, {
+				method:      'POST',
+				credentials: 'same-origin',
+				body:        body,
+			} )
+				.then( function ( res ) {
+					return res.json();
+				} )
+				.then( function ( json ) {
+					var ok = !! ( json && json.success );
+					results.push( {
+						name:    name,
+						ok:      ok,
+						message: ok ? '' : ( json && json.data && json.data.message ? json.data.message : 'Request failed.' ),
+					} );
+					tr.classList.remove( 'is-pending' );
+					if ( ! ok ) {
+						tr.classList.add( 'is-error' );
+					}
+					next( i + 1 );
+				} )
+				.catch( function () {
+					results.push( { name: name, ok: false, message: 'Network error.' } );
+					tr.classList.remove( 'is-pending' );
+					tr.classList.add( 'is-error' );
+					next( i + 1 );
+				} );
+		}
+
+		function finish() {
+			var failed  = results.filter( function ( r ) {
+				return ! r.ok;
+			} );
+			var summary = 'Done: ' + ( results.length - failed.length ) + ' succeeded';
+			if ( failed.length ) {
+				summary += ', ' + failed.length + ' failed';
+			}
+			if ( skipped ) {
+				summary += ', ' + skipped + ' skipped (not applicable)';
+			}
+
+			if ( failed.length ) {
+				// Blocking alert so the messages are read before the reload.
+				window.alert( summary + '\n\n' + failed.map( function ( r ) {
+					return r.name + ' — ' + r.message;
+				} ).join( '\n' ) );
+			}
+
+			// Single reload, always — the table re-renders server truth,
+			// including partially completed runs.
+			window.location.reload();
+		}
+
+		next( 0 );
+	}
+
+	if ( applyBtn ) {
+		applyBtn.addEventListener( 'click', runBulk );
+	}
+
+	/* -------------------------------------------------------------------------
+	   Per-row Remove
+	   ------------------------------------------------------------------------- */
+
+	table.querySelectorAll( '.nera-aio-row-remove' ).forEach( function ( btn ) {
+		btn.addEventListener( 'click', function () {
+			var cfg  = window.neraAioAdmin || {};
+			var id   = btn.getAttribute( 'data-id' );
+			var name = btn.getAttribute( 'data-name' ) || id;
+
+			if ( ! cfg.ajaxurl || ! cfg.removeNonce ) {
+				return;
+			}
+
+			var ok = window.confirm(
+				'Permanently delete ' + name + '?\n\nThis deactivates the plugin, deletes its files, and runs its uninstall routine. This cannot be undone.'
+			);
+			if ( ! ok ) {
+				return;
+			}
+
+			btn.disabled = true;
+
+			var body = new URLSearchParams();
+			body.append( 'action', 'nera_aio_remove' );
+			body.append( '_ajax_nonce', cfg.removeNonce );
+			body.append( 'id', id );
+
+			fetch( cfg.ajaxurl, {
+				method:      'POST',
+				credentials: 'same-origin',
+				body:        body,
+			} )
+				.then( function ( res ) {
+					return res.json();
+				} )
+				.then( function ( json ) {
+					if ( json && json.success ) {
+						window.location.reload();
+						return;
+					}
+					btn.disabled = false;
+					window.alert( json && json.data && json.data.message ? json.data.message : 'Remove failed.' );
+				} )
+				.catch( function () {
+					btn.disabled = false;
+					window.alert( 'Network error.' );
+				} );
+		} );
 	} );
 
 } )();
