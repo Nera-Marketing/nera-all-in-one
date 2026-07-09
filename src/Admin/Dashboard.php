@@ -15,6 +15,7 @@ use Nera\AllInOne\Entitlements\Entitlements;
 use Nera\AllInOne\License\License_Client;
 use Nera\AllInOne\Modules\Module_Registry;
 use Nera\AllInOne\Support\Assets;
+use Nera\AllInOne\Support\Managers;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -125,17 +126,21 @@ final class Dashboard {
 			true
 		);
 
+		$is_manager = Managers::is_manager();
+
+		// Mutating nonces and the demo key are withheld from non-managers
+		// (read-only dashboard); admin.js already no-ops on missing keys.
 		wp_localize_script(
 			'nera-aio-admin',
 			'neraAioAdmin',
 			array(
 				'ajaxurl'      => admin_url( 'admin-ajax.php' ),
-				'checkNonce'   => wp_create_nonce( 'nera_aio_check_now' ),
-				'toggleNonce'  => wp_create_nonce( 'nera_aio_toggle' ),
-				'installNonce' => wp_create_nonce( 'nera_aio_install' ),
+				'checkNonce'   => $is_manager ? wp_create_nonce( 'nera_aio_check_now' ) : '',
+				'toggleNonce'  => $is_manager ? wp_create_nonce( 'nera_aio_toggle' ) : '',
+				'installNonce' => $is_manager ? wp_create_nonce( 'nera_aio_install' ) : '',
 				'detailsNonce' => wp_create_nonce( 'nera_aio_details' ),
-				'removeNonce'  => wp_create_nonce( 'nera_aio_remove' ),
-				'demoKey'      => $this->license->is_demo_mode() ? $this->license->get_demo_key() : '',
+				'removeNonce'  => $is_manager ? wp_create_nonce( 'nera_aio_remove' ) : '',
+				'demoKey'      => ( $is_manager && $this->license->is_demo_mode() ) ? $this->license->get_demo_key() : '',
 				'demoMode'     => $this->license->is_demo_mode(),
 			)
 		);
@@ -157,6 +162,7 @@ final class Dashboard {
 
 		$tier          = $this->entitlements->current_tier();
 		$is_demo       = $this->license->is_demo_mode();
+		$is_manager    = Managers::is_manager();
 		$counts        = Plugin_Catalog::counts( $this->entitlements, $this->registry );
 		$total         = count( Plugin_Catalog::items() );
 		$licensing_url = admin_url( 'admin.php?page=nera-aio-licensing' );
@@ -190,11 +196,13 @@ final class Dashboard {
 								<span class="nera-aio-badge nera-aio-badge--demo"><?php echo esc_html__( 'DEMO MODE', 'nera-all-in-one' ); ?></span>
 							<?php endif; ?>
 						</div>
-						<div class="nera-aio-hero__actions">
-							<a href="<?php echo esc_url( $licensing_url ); ?>" class="button button-primary"><?php echo esc_html__( 'Manage License', 'nera-all-in-one' ); ?></a>
-							<button type="button" id="nera-aio-check-now" class="button button-secondary"><?php echo esc_html__( 'Check license now', 'nera-all-in-one' ); ?></button>
-							<span id="nera-aio-check-result" class="nera-aio-inline-notice" style="display:none;"></span>
-						</div>
+						<?php if ( $is_manager ) : ?>
+							<div class="nera-aio-hero__actions">
+								<a href="<?php echo esc_url( $licensing_url ); ?>" class="button button-primary"><?php echo esc_html__( 'Manage License', 'nera-all-in-one' ); ?></a>
+								<button type="button" id="nera-aio-check-now" class="button button-secondary"><?php echo esc_html__( 'Check license now', 'nera-all-in-one' ); ?></button>
+								<span id="nera-aio-check-result" class="nera-aio-inline-notice" style="display:none;"></span>
+							</div>
+						<?php endif; ?>
 					</div>
 				</div>
 

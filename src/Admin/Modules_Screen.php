@@ -15,6 +15,7 @@ use Nera\AllInOne\Entitlements\Entitlements;
 use Nera\AllInOne\License\License_Client;
 use Nera\AllInOne\Modules\Module_Registry;
 use Nera\AllInOne\Support\Assets;
+use Nera\AllInOne\Support\Managers;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -89,17 +90,21 @@ final class Modules_Screen {
 		wp_enqueue_style( 'nera-aio-admin', Assets::admin_url( 'admin.css' ), array(), NERA_AIO_VERSION );
 		wp_enqueue_script( 'nera-aio-admin', Assets::admin_url( 'admin.js' ), array(), NERA_AIO_VERSION, true );
 
+		$is_manager = Managers::is_manager();
+
+		// Mutating nonces and the demo key are withheld from non-managers
+		// (read-only dashboard); admin.js already no-ops on missing keys.
 		wp_localize_script(
 			'nera-aio-admin',
 			'neraAioAdmin',
 			array(
 				'ajaxurl'      => admin_url( 'admin-ajax.php' ),
-				'checkNonce'   => wp_create_nonce( 'nera_aio_check_now' ),
-				'toggleNonce'  => wp_create_nonce( 'nera_aio_toggle' ),
-				'installNonce' => wp_create_nonce( 'nera_aio_install' ),
+				'checkNonce'   => $is_manager ? wp_create_nonce( 'nera_aio_check_now' ) : '',
+				'toggleNonce'  => $is_manager ? wp_create_nonce( 'nera_aio_toggle' ) : '',
+				'installNonce' => $is_manager ? wp_create_nonce( 'nera_aio_install' ) : '',
 				'detailsNonce' => wp_create_nonce( 'nera_aio_details' ),
-				'removeNonce'  => wp_create_nonce( 'nera_aio_remove' ),
-				'demoKey'      => $this->license->is_demo_mode() ? $this->license->get_demo_key() : '',
+				'removeNonce'  => $is_manager ? wp_create_nonce( 'nera_aio_remove' ) : '',
+				'demoKey'      => ( $is_manager && $this->license->is_demo_mode() ) ? $this->license->get_demo_key() : '',
 				'demoMode'     => $this->license->is_demo_mode(),
 			)
 		);

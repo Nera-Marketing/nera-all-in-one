@@ -20,9 +20,12 @@ define( 'NERA_AIO_FILE', __FILE__ );
 define( 'NERA_AIO_DIR', plugin_dir_path( __FILE__ ) );
 define( 'NERA_AIO_URL', plugin_dir_url( __FILE__ ) );
 
-// Default tier when no license / no last-known-good is available.
+// Default tier when no license / no last-known-good is available. Defaults to
+// the full tier: all sites are Nera-built, and mutating anything in AIO is
+// gated by manager identity (Support\Managers / Support\Guard), not by tier.
+// The signed-key system stays intact (dormant) for future external licensing.
 if ( ! defined( 'NERA_AIO_DEFAULT_TIER' ) ) {
-	define( 'NERA_AIO_DEFAULT_TIER', 'free' );
+	define( 'NERA_AIO_DEFAULT_TIER', 'agency' );
 }
 
 // MVP demo key. Entering this key unlocks PRO — but ONLY in demo mode.

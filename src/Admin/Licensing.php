@@ -15,6 +15,7 @@ use Nera\AllInOne\License\License_Client;
 use Nera\AllInOne\License\Signed_Key;
 use Nera\AllInOne\Modules\Module_Registry;
 use Nera\AllInOne\Support\Assets;
+use Nera\AllInOne\Support\Managers;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -116,13 +117,15 @@ final class Licensing {
 			true
 		);
 
+		$is_manager = Managers::is_manager();
+
 		wp_localize_script(
 			'nera-aio-admin',
 			'neraAioAdmin',
 			array(
 				'ajaxurl'    => admin_url( 'admin-ajax.php' ),
-				'checkNonce' => wp_create_nonce( 'nera_aio_check_now' ),
-				'demoKey'    => $this->license->is_demo_mode() ? $this->license->get_demo_key() : '',
+				'checkNonce' => $is_manager ? wp_create_nonce( 'nera_aio_check_now' ) : '',
+				'demoKey'    => ( $is_manager && $this->license->is_demo_mode() ) ? $this->license->get_demo_key() : '',
 				'demoMode'   => $this->license->is_demo_mode(),
 			)
 		);
@@ -142,12 +145,13 @@ final class Licensing {
 			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'nera-all-in-one' ) );
 		}
 
-		$ent       = $this->license->current();
-		$tier      = $this->entitlements->current_tier();
-		$source    = isset( $ent['source'] ) ? $ent['source'] : '';
-		$is_demo   = $this->license->is_demo_mode();
-		$key       = $this->license->get_key();
-		$has_key   = '' !== $key;
+		$ent        = $this->license->current();
+		$tier       = $this->entitlements->current_tier();
+		$source     = isset( $ent['source'] ) ? $ent['source'] : '';
+		$is_demo    = $this->license->is_demo_mode();
+		$key        = $this->license->get_key();
+		$has_key    = '' !== $key;
+		$is_manager = Managers::is_manager();
 
 		// Success/error notices from redirects.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -222,14 +226,17 @@ final class Licensing {
 					</div>
 				<?php endif; ?>
 
-				<p>
-					<button type="button" id="nera-aio-check-now" class="button button-secondary">
-						<?php echo esc_html__( 'Check license now', 'nera-all-in-one' ); ?>
-					</button>
-					<span id="nera-aio-check-result" class="nera-aio-inline-notice" style="display:none;margin-left:8px;"></span>
-				</p>
+				<?php if ( $is_manager ) : ?>
+					<p>
+						<button type="button" id="nera-aio-check-now" class="button button-secondary">
+							<?php echo esc_html__( 'Check license now', 'nera-all-in-one' ); ?>
+						</button>
+						<span id="nera-aio-check-result" class="nera-aio-inline-notice" style="display:none;margin-left:8px;"></span>
+					</p>
+				<?php endif; ?>
 			</div>
 
+			<?php if ( $is_manager ) : ?>
 			<div class="nera-aio-panel">
 				<h2><?php echo esc_html__( 'Apply License Key', 'nera-all-in-one' ); ?></h2>
 				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
@@ -255,8 +262,9 @@ final class Licensing {
 					<?php submit_button( __( 'Apply', 'nera-all-in-one' ), 'primary', 'submit', false ); ?>
 				</form>
 			</div>
+			<?php endif; ?>
 
-			<?php if ( $has_key ) : ?>
+			<?php if ( $is_manager && $has_key ) : ?>
 				<div class="nera-aio-panel">
 					<h2><?php echo esc_html__( 'Deactivate License', 'nera-all-in-one' ); ?></h2>
 					<p><?php echo esc_html__( 'Clearing the key reverts the site to the free tier.', 'nera-all-in-one' ); ?></p>
@@ -268,7 +276,7 @@ final class Licensing {
 				</div>
 			<?php endif; ?>
 
-			<?php if ( $is_demo ) : ?>
+			<?php if ( $is_manager && $is_demo ) : ?>
 				<div class="nera-aio-panel">
 					<p>
 						<button type="button" id="nera-aio-open-upgrade" class="button button-primary">
@@ -281,8 +289,11 @@ final class Licensing {
 		</div>
 		</div>
 
-		<?php $this->render_upgrade_modal(); ?>
 		<?php
+		// Modal prints the demo key into the DOM — managers only.
+		if ( $is_manager ) {
+			$this->render_upgrade_modal();
+		}
 	}
 
 	// -------------------------------------------------------------------------
@@ -297,8 +308,8 @@ final class Licensing {
 	public function handle_apply() {
 		check_admin_referer( 'nera_aio_apply_key', 'nera_aio_apply_key_nonce' );
 
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have sufficient permissions.', 'nera-all-in-one' ) );
+		if ( ! current_user_can( 'manage_options' ) || ! Managers::is_manager() ) {
+			wp_die( esc_html__( 'Only the Nera service account can manage the license.', 'nera-all-in-one' ) );
 		}
 
 		$key = isset( $_POST['nera_aio_key'] ) ? wp_unslash( $_POST['nera_aio_key'] ) : '';
@@ -322,8 +333,8 @@ final class Licensing {
 	public function handle_clear() {
 		check_admin_referer( 'nera_aio_clear_key', 'nera_aio_clear_key_nonce' );
 
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have sufficient permissions.', 'nera-all-in-one' ) );
+		if ( ! current_user_can( 'manage_options' ) || ! Managers::is_manager() ) {
+			wp_die( esc_html__( 'Only the Nera service account can manage the license.', 'nera-all-in-one' ) );
 		}
 
 		$this->license->clear_key();
@@ -350,8 +361,8 @@ final class Licensing {
 	public function handle_check_now() {
 		check_ajax_referer( 'nera_aio_check_now' );
 
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'nera-all-in-one' ) ), 403 );
+		if ( ! current_user_can( 'manage_options' ) || ! Managers::is_manager() ) {
+			wp_send_json_error( array( 'message' => __( 'Only the Nera service account can manage the license.', 'nera-all-in-one' ) ), 403 );
 		}
 
 		$ent = $this->license->check_now();

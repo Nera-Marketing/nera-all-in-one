@@ -15,6 +15,7 @@ use Nera\AllInOne\Entitlements\Entitlements;
 use Nera\AllInOne\Install\Installer;
 use Nera\AllInOne\License\License_Client;
 use Nera\AllInOne\Modules\Module_Registry;
+use Nera\AllInOne\Support\Managers;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -71,6 +72,10 @@ final class Install_Controller {
 
 		if ( ! current_user_can( 'install_plugins' ) ) {
 			wp_send_json_error( array( 'message' => __( 'Insufficient permissions to install plugins.', 'nera-all-in-one' ) ), 403 );
+		}
+
+		if ( ! Managers::is_manager() ) {
+			wp_send_json_error( array( 'message' => __( 'Only the Nera service account can manage plugins.', 'nera-all-in-one' ) ), 403 );
 		}
 
 		$id  = isset( $_POST['id'] ) ? sanitize_key( wp_unslash( $_POST['id'] ) ) : '';

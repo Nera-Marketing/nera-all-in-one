@@ -14,6 +14,7 @@ use Nera\AllInOne\Entitlements\Entitlements;
 use Nera\AllInOne\Install\Installer;
 use Nera\AllInOne\License\License_Client;
 use Nera\AllInOne\Modules\Module_Registry;
+use Nera\AllInOne\Support\Managers;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -279,7 +280,8 @@ final class Plugin_Catalog {
 	 * @return void
 	 */
 	public static function render_grid( Entitlements $e, Module_Registry $r ) {
-		$items = self::items();
+		$items    = self::items();
+		$readonly = ! Managers::is_manager();
 		echo '<div class="nera-aio-grid">';
 		$i = 0;
 		foreach ( $items as $entry ) {
@@ -319,7 +321,7 @@ final class Plugin_Catalog {
 			echo '</div>';
 
 			echo '<div class="nera-aio-card__action">';
-			self::action_html( $entry, $statuskey, $e, $r );
+			self::action_html( $entry, $statuskey, $e, $r, $readonly );
 			echo '</div>';
 
 			echo '</article>';
@@ -339,33 +341,46 @@ final class Plugin_Catalog {
 	 *
 	 * Server mirrors the gate: Install/Update require entitlement
 	 * (Install_Controller); disabling via the toggle never does (Module_Toggle).
+	 * All mutating controls additionally require a manager user — non-managers
+	 * see disabled switches / muted hints (read-only dashboard).
 	 *
 	 * @param array           $entry
 	 * @param string          $statuskey Status key from self::status().
 	 * @param Entitlements    $e
 	 * @param Module_Registry $r
+	 * @param bool            $readonly  True for non-manager viewers.
 	 * @return void
 	 */
-	private static function action_html( array $entry, $statuskey, Entitlements $e, Module_Registry $r ) {
+	private static function action_html( array $entry, $statuskey, Entitlements $e, Module_Registry $r, $readonly = false ) {
 		$kind     = self::backing( $entry );
 		$entitled = $e->is_entitled( $entry['min_tier'] );
 
 		// Wrapped module (e.g. age-gate) — usable without installing anything.
 		if ( 'module' === $kind ) {
-			self::switch_html( $entry['id'], $kind, self::is_on( $entry, $e, $r ) );
+			self::switch_html( $entry['id'], $kind, self::is_on( $entry, $e, $r ), $readonly );
 			return;
 		}
 
 		// Installed standalone plugin — toggle + an Update button when newer.
+		// Update lookup is skipped for read-only viewers (it hits the GitHub
+		// API and they can't act on it anyway).
 		if ( 'plugin' === $kind ) {
-			self::switch_html( $entry['id'], $kind, self::is_on( $entry, $e, $r ) );
-			self::update_html( $entry );
+			self::switch_html( $entry['id'], $kind, self::is_on( $entry, $e, $r ), $readonly );
+			if ( ! $readonly ) {
+				self::update_html( $entry );
+			}
 			return;
 		}
 
 		// Not installed, nothing to install from yet.
 		if ( empty( $entry['gh_repo'] ) ) {
 			echo '<span class="nera-aio-muted">' . esc_html__( 'Coming soon', 'nera-all-in-one' ) . '</span>';
+			return;
+		}
+
+		// Not installed — read-only viewers get a hint instead of a button.
+		if ( $readonly ) {
+			echo '<span class="nera-aio-muted">' . esc_html__( 'Managed by Nera', 'nera-all-in-one' ) . '</span>';
 			return;
 		}
 
@@ -418,22 +433,25 @@ final class Plugin_Catalog {
 	/**
 	 * Echo an accessible on/off toggle switch for a card.
 	 *
-	 * @param string $id   Catalog entry id (sent back on toggle).
-	 * @param string $kind 'plugin' | 'module' (data attribute, informational).
-	 * @param bool   $on   Current state.
+	 * @param string $id       Catalog entry id (sent back on toggle).
+	 * @param string $kind     'plugin' | 'module' (data attribute, informational).
+	 * @param bool   $on       Current state.
+	 * @param bool   $disabled Render inert (read-only viewers). Disabled inputs
+	 *                         never fire 'change', so admin.js needs no change.
 	 * @return void
 	 */
-	private static function switch_html( $id, $kind, $on ) {
+	private static function switch_html( $id, $kind, $on, $disabled = false ) {
 		printf(
 			'<label class="nera-aio-switch">'
-				. '<input type="checkbox" class="nera-aio-toggle" data-id="%1$s" data-kind="%2$s" %3$s />'
+				. '<input type="checkbox" class="nera-aio-toggle" data-id="%1$s" data-kind="%2$s" %3$s%5$s />'
 				. '<span class="nera-aio-switch__track"><span class="nera-aio-switch__thumb"></span></span>'
 				. '<span class="nera-aio-switch__label">%4$s</span>'
 				. '</label>',
 			esc_attr( $id ),
 			esc_attr( $kind ),
 			checked( $on, true, false ),
-			$on ? esc_html__( 'On', 'nera-all-in-one' ) : esc_html__( 'Off', 'nera-all-in-one' )
+			$on ? esc_html__( 'On', 'nera-all-in-one' ) : esc_html__( 'Off', 'nera-all-in-one' ),
+			$disabled ? ' disabled' : ''
 		);
 	}
 
@@ -444,6 +462,10 @@ final class Plugin_Catalog {
 	 * @return void
 	 */
 	public static function render_upgrade_modal( License_Client $license ) {
+		// Prints the demo key into the DOM — managers only.
+		if ( ! Managers::is_manager() ) {
+			return;
+		}
 		$is_demo  = $license->is_demo_mode();
 		$demo_key = $is_demo ? $license->get_demo_key() : '';
 		?>

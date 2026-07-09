@@ -13,6 +13,7 @@ namespace Nera\AllInOne\DemoPro;
 
 use Nera\AllInOne\Modules\Abstract_Module;
 use Nera\AllInOne\Entitlements\Tier;
+use Nera\AllInOne\Support\Managers;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -67,6 +68,10 @@ final class Module extends Abstract_Module {
 	 * @return void
 	 */
 	public function render_admin_panel() {
+		// Internal proof-of-concept notice — Nera managers only.
+		if ( ! Managers::is_manager() ) {
+			return;
+		}
 		?>
 		<div class="notice notice-success">
 			<p>

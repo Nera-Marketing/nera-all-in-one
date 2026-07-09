@@ -16,6 +16,7 @@ use Nera\AllInOne\Entitlements\Entitlements;
 use Nera\AllInOne\License\License_Client;
 use Nera\AllInOne\Modules\Module_Overrides;
 use Nera\AllInOne\Modules\Module_Registry;
+use Nera\AllInOne\Support\Managers;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -69,6 +70,10 @@ final class Module_Toggle {
 	 */
 	public function handle_toggle() {
 		check_ajax_referer( 'nera_aio_toggle' );
+
+		if ( ! Managers::is_manager() ) {
+			wp_send_json_error( array( 'message' => __( 'Only the Nera service account can manage plugins.', 'nera-all-in-one' ) ), 403 );
+		}
 
 		$id      = isset( $_POST['id'] ) ? sanitize_key( wp_unslash( $_POST['id'] ) ) : '';
 		$enabled = ! empty( $_POST['enabled'] );

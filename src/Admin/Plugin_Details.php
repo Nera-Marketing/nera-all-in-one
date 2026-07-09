@@ -17,6 +17,7 @@ use Nera\AllInOne\Entitlements\Entitlements;
 use Nera\AllInOne\License\License_Client;
 use Nera\AllInOne\Modules\Module_Registry;
 use Nera\AllInOne\Support\Logger;
+use Nera\AllInOne\Support\Managers;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -96,7 +97,7 @@ final class Plugin_Details {
 		$status     = Plugin_Catalog::status( $entry, $this->entitlements, $this->registry );
 		$installed  = Plugin_Catalog::installed( $entry );
 		$repo       = isset( $entry['gh_repo'] ) ? (string) $entry['gh_repo'] : '';
-		$can_remove = $installed && current_user_can( 'delete_plugins' );
+		$can_remove = $installed && current_user_can( 'delete_plugins' ) && Managers::is_manager();
 
 		wp_send_json_success(
 			array(
@@ -132,6 +133,10 @@ final class Plugin_Details {
 
 		if ( ! current_user_can( 'delete_plugins' ) ) {
 			wp_send_json_error( array( 'message' => __( 'Insufficient permissions to delete plugins.', 'nera-all-in-one' ) ), 403 );
+		}
+
+		if ( ! Managers::is_manager() ) {
+			wp_send_json_error( array( 'message' => __( 'Only the Nera service account can manage plugins.', 'nera-all-in-one' ) ), 403 );
 		}
 
 		$id    = isset( $_POST['id'] ) ? sanitize_key( wp_unslash( $_POST['id'] ) ) : '';
