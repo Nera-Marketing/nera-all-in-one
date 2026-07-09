@@ -12,6 +12,7 @@ namespace Nera\AllInOne\Admin;
 
 use Nera\AllInOne\Entitlements\Entitlements;
 use Nera\AllInOne\License\License_Client;
+use Nera\AllInOne\License\Signed_Key;
 use Nera\AllInOne\Modules\Module_Registry;
 use Nera\AllInOne\Support\Assets;
 
@@ -184,6 +185,33 @@ final class Licensing {
 						</span>
 					<?php endif; ?>
 				</p>
+
+				<?php
+				$ins = Signed_Key::inspect( $this->license->get_key() );
+				if ( $ins['ok'] && ! empty( $ins['domain'] ) ) :
+					?>
+					<p>
+						<?php
+						/* translators: %s: bound domain from the license key */
+						printf( esc_html__( 'Licensed for: %s', 'nera-all-in-one' ), esc_html( $ins['domain'] ) );
+						?>
+					</p>
+				<?php endif; ?>
+
+				<?php if ( 'signed-domain-mismatch' === $source ) : ?>
+					<div class="notice notice-error inline">
+						<p>
+							<?php
+							/* translators: 1: domain the key is licensed for, 2: this site's host */
+							printf(
+								esc_html__( 'This license key is issued for %1$s, but this site is %2$s. The tier is locked to free until a matching key is applied.', 'nera-all-in-one' ),
+								esc_html( isset( $ins['domain'] ) ? $ins['domain'] : '' ),
+								esc_html( (string) wp_parse_url( home_url(), PHP_URL_HOST ) )
+							);
+							?>
+						</p>
+					</div>
+				<?php endif; ?>
 
 				<?php if ( $is_demo ) : ?>
 					<div class="notice notice-warning inline nera-aio-demo-notice">

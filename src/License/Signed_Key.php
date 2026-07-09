@@ -35,6 +35,7 @@ final class Signed_Key {
 			'ok'      => false,
 			'tier'    => null,
 			'expired' => false,
+			'domain'  => null,
 		);
 
 		$key = is_string( $key ) ? trim( $key ) : '';
@@ -76,11 +77,13 @@ final class Signed_Key {
 
 		$tier    = isset( $payload['tier'] ) && is_string( $payload['tier'] ) ? $payload['tier'] : null;
 		$expired = isset( $payload['exp'] ) && is_numeric( $payload['exp'] ) && (int) $payload['exp'] < time();
+		$domain  = isset( $payload['domain'] ) && is_string( $payload['domain'] ) ? $payload['domain'] : null;
 
 		return array(
 			'ok'      => true,
 			'tier'    => $tier,
 			'expired' => $expired,
+			'domain'  => $domain,
 		);
 	}
 

@@ -69,6 +69,10 @@ final class License_Client {
 				return self::entitlement( NERA_AIO_DEFAULT_TIER, 'signed-expired' );
 			}
 			if ( Tier::is_valid( $ins['tier'] ) ) {
+				if ( ! self::domain_ok( $ins['domain'] ) ) {
+					Logger::log( 'signed key domain mismatch' );
+					return self::entitlement( NERA_AIO_DEFAULT_TIER, 'signed-domain-mismatch' );
+				}
 				return self::entitlement( $ins['tier'], 'signed' );
 			}
 			Logger::log( 'signed key has invalid tier' );
@@ -182,6 +186,38 @@ final class License_Client {
 	// -------------------------------------------------------------------------
 	// Private helpers
 	// -------------------------------------------------------------------------
+
+	/**
+	 * Normalize a domain host: lowercase, strip single leading "www.".
+	 *
+	 * @param mixed $host
+	 * @return string
+	 */
+	private static function normalize_domain( $host ) {
+		if ( ! is_string( $host ) || '' === $host ) {
+			return '';
+		}
+		$host = strtolower( $host );
+		if ( 0 === strpos( $host, 'www.' ) ) {
+			$host = substr( $host, 4 );
+		}
+		return $host;
+	}
+
+	/**
+	 * Returns true when the key is unbound (empty $bound) or when $bound matches
+	 * the site's own host after normalization.
+	 *
+	 * @param string|null $bound Domain from the key payload, or null if unbound.
+	 * @return bool
+	 */
+	private static function domain_ok( $bound ) {
+		if ( null === $bound || '' === $bound ) {
+			return true;
+		}
+		$site = wp_parse_url( home_url(), PHP_URL_HOST );
+		return self::normalize_domain( $bound ) === self::normalize_domain( $site );
+	}
 
 	/**
 	 * Builds a normalised entitlement array.
