@@ -12,6 +12,7 @@
 
 namespace Nera\AllInOne\Install;
 
+use Nera\AllInOne\Admin\Plugin_Catalog;
 use Nera\AllInOne\Support\Logger;
 
 defined( 'ABSPATH' ) || exit;
@@ -120,6 +121,9 @@ final class Installer {
 	 * Download + install (or update) a catalog entry's plugin from GitHub, then
 	 * activate it.
 	 *
+	 * When the plugin is already installed and no update is needed, skips the
+	 * zip download and only activates (or no-ops if already active).
+	 *
 	 * @param array       $entry Catalog entry (needs gh_repo, slug, main_file).
 	 * @param string|null $ref   Specific release tag, or null for latest.
 	 * @return true|\WP_Error
@@ -131,6 +135,19 @@ final class Installer {
 			return new \WP_Error( 'nera_aio_no_source', __( 'This plugin has no GitHub source.', 'nera-all-in-one' ) );
 		}
 
+		require_once ABSPATH . 'wp-admin/includes/plugin.php';
+
+		// Already on disk and current — activate only (or no-op). Avoids
+		// Plugin_Upgrader failures when Overview/Manage Install is clicked
+		// against a plugin that was installed outside AIO or on a stale page.
+		$existing = Plugin_Catalog::legacy_plugin_file( $slug );
+		if ( '' !== $existing && ! self::needs_update( $entry, $repo, $ref ) ) {
+			if ( is_plugin_active( $existing ) ) {
+				return true;
+			}
+			return self::try_activate( $existing );
+		}
+
 		$zip = self::resolve_zip( $repo, $ref );
 		if ( '' === $zip ) {
 			return new \WP_Error( 'nera_aio_no_release', __( 'Could not find a release to install.', 'nera-all-in-one' ) );
@@ -138,19 +155,17 @@ final class Installer {
 
 		require_once ABSPATH . 'wp-admin/includes/file.php';
 		require_once ABSPATH . 'wp-admin/includes/misc.php';
-		require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
 
 		// Snapshot prior state: an update must not change the active state,
 		// and a fresh install auto-activates (see below).
-		$plugin_file   = $slug . '/' . ( isset( $entry['main_file'] ) ? $entry['main_file'] : $slug . '.php' );
-		$was_installed = is_dir( WP_PLUGIN_DIR . '/' . $slug );
-		$was_active    = $was_installed && is_plugin_active( $plugin_file );
+		$was_installed = '' !== $existing || is_dir( WP_PLUGIN_DIR . '/' . $slug );
+		$was_active    = '' !== $existing && is_plugin_active( $existing );
 
 		// Git-clone installs carry read-only files (git object files are mode
 		// 0444) that the upgrader's clear-destination step cannot delete, which
 		// aborts the whole update. Make the old folder writable before replacing.
-		if ( $was_installed ) {
+		if ( is_dir( WP_PLUGIN_DIR . '/' . $slug ) ) {
 			self::make_writable( WP_PLUGIN_DIR . '/' . $slug );
 		}
 
@@ -181,6 +196,12 @@ final class Installer {
 			);
 		}
 
+		wp_clean_plugins_cache( true );
+		$plugin_file = Plugin_Catalog::legacy_plugin_file( $slug );
+		if ( '' === $plugin_file ) {
+			$plugin_file = self::expected_plugin_file( $entry, $slug );
+		}
+
 		// Updating an inactive plugin must leave it inactive.
 		if ( $was_installed && ! $was_active ) {
 			return true;
@@ -188,15 +209,72 @@ final class Installer {
 
 		// Activate the freshly installed plugin. Activation runs the plugin's
 		// main file, which can fatal on a broken/incompatible plugin — catch it
-		// so a successful install is never turned into a white screen. The card
-		// then shows "Installed" (inactive) and the user can toggle it on.
+		// so a successful install is never turned into a white screen.
+		return self::try_activate( $plugin_file );
+	}
+
+	/**
+	 * Whether the install request should download a newer (or specific) release.
+	 *
+	 * @param array       $entry
+	 * @param string      $repo
+	 * @param string|null $ref
+	 * @return bool
+	 */
+	private static function needs_update( array $entry, $repo, $ref ) {
+		if ( null !== $ref && '' !== $ref ) {
+			return true;
+		}
+
+		$installed = Plugin_Catalog::installed_version( $entry );
+		if ( '' === $installed ) {
+			return true;
+		}
+
+		$latest = self::latest_tag( $repo );
+		if ( '' === $latest ) {
+			// Can't confirm currency — leave files alone; activate-only path.
+			return false;
+		}
+
+		return version_compare( ltrim( $latest, 'v' ), ltrim( $installed, 'v' ), '>' );
+	}
+
+	/**
+	 * Canonical "folder/main.php" from the catalog entry.
+	 *
+	 * @param array  $entry
+	 * @param string $slug
+	 * @return string
+	 */
+	private static function expected_plugin_file( array $entry, $slug ) {
+		$main = isset( $entry['main_file'] ) ? (string) $entry['main_file'] : '';
+		if ( '' === $main ) {
+			$main = $slug . '.php';
+		}
+		return $slug . '/' . $main;
+	}
+
+	/**
+	 * Activate a plugin file, surfacing WP_Error / fatals without white-screening.
+	 *
+	 * @param string $plugin_file Plugin basename relative to plugins dir.
+	 * @return true|\WP_Error
+	 */
+	private static function try_activate( $plugin_file ) {
 		try {
 			$activate = activate_plugin( $plugin_file );
 			if ( is_wp_error( $activate ) ) {
-				Logger::log( 'installed but activation failed: ' . $plugin_file . ' — ' . $activate->get_error_message() );
+				Logger::log( 'activation failed: ' . $plugin_file . ' — ' . $activate->get_error_message() );
+				return $activate;
 			}
 		} catch ( \Throwable $e ) {
-			Logger::log( 'installed but activation fatal: ' . $plugin_file . ' — ' . $e->getMessage() );
+			Logger::log( 'activation fatal: ' . $plugin_file . ' — ' . $e->getMessage() );
+			return new \WP_Error(
+				'nera_aio_activate_failed',
+				/* translators: %s: exception message */
+				sprintf( __( 'Plugin installed but could not be activated: %s', 'nera-all-in-one' ), $e->getMessage() )
+			);
 		}
 
 		return true;

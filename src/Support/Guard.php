@@ -1,16 +1,18 @@
 <?php
 /**
- * Hard protection around the manager account and the AIO plugin itself.
+ * Hard protection around the manager account.
  *
- * Two attack surfaces this closes for non-manager users (typically client
- * admins, who are full `administrator`s):
+ * Closes account-takeover surfaces for non-manager users (typically client
+ * admins, who are full `administrator`s): editing the manager's
+ * password/email/role, deleting the account, or "identity squatting"
+ * (creating/updating another user to the manager login/email on a site where
+ * it is unclaimed; admin-initiated email changes of other users skip WP's
+ * confirmation flow).
  *
- *   1. Account takeover — editing the manager's password/email/role, deleting
- *      the account, or "identity squatting" (creating/updating another user to
- *      the manager login/email on a site where it is unclaimed; admin-initiated
- *      email changes of other users skip WP's confirmation flow).
- *   2. Disabling the gate — deactivating Nera All In One would un-hide the
- *      Nera plugin rows and give back native activate/deactivate control.
+ * Nera All In One itself is not capability-locked: anyone with the normal
+ * deactivate_plugins / delete_plugins caps can remove it from plugins.php.
+ * Manager-only mutation of the AIO dashboard (install/toggle/remove catalog
+ * plugins) is enforced separately via Support\Managers.
  *
  * Registered unconditionally from Plugin::boot() (not boot_admin) so the
  * checks also cover REST (/wp/v2/users) and XML-RPC. Everything is skipped
@@ -27,11 +29,6 @@ defined( 'ABSPATH' ) || exit;
  * Guard — capability and user-data filters protecting the manager model.
  */
 final class Guard {
-
-	/**
-	 * AIO's own plugin basename (protected from deactivation by non-managers).
-	 */
-	const SELF = 'nera-all-in-one/nera-all-in-one.php';
 
 	/**
 	 * Register all guard filters. Called once from Plugin::boot().
@@ -70,16 +67,6 @@ final class Guard {
 			case 'remove_user':
 				$target = isset( $args[0] ) ? (int) $args[0] : 0;
 				if ( $target && Managers::is_manager_id( $target ) && ! self::actor_is_manager( $user_id ) ) {
-					return array( 'do_not_allow' );
-				}
-				break;
-
-			// AIO itself: non-managers cannot deactivate it. Deletion is
-			// unreachable without deactivation (WP refuses to delete active
-			// plugins). 'activate_plugin' is intentionally NOT denied so a
-			// client can re-activate AIO if a fatal auto-deactivated it.
-			case 'deactivate_plugin':
-				if ( isset( $args[0] ) && self::SELF === $args[0] && ! self::actor_is_manager( $user_id ) ) {
 					return array( 'do_not_allow' );
 				}
 				break;

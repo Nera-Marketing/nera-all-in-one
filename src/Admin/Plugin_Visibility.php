@@ -2,11 +2,12 @@
 /**
  * Hides Nera plugins from the wp-admin plugin surfaces.
  *
- * All Nera plugins are managed exclusively through the Nera All In One
+ * Catalog Nera plugins are managed exclusively through the Nera All In One
  * dashboard, so their rows are removed from the Plugins list table and their
  * update notices are stripped from the update transient (Dashboard → Updates,
- * menu count badges). Nera All In One itself stays visible so it can be
- * deactivated/updated through the normal UI.
+ * menu count badges). Nera All In One itself always stays visible (matched by
+ * plugin_basename( NERA_AIO_FILE ), so renamed install folders still show) so
+ * it can be deactivated/deleted through the normal UI.
  *
  * Cosmetic, not security: the plugins remain active and manageable via WP-CLI.
  * Filters register admin-side only, so wp-cron auto-updates and WP-CLI keep
@@ -124,9 +125,9 @@ final class Plugin_Visibility {
 
 	/**
 	 * Whether a plugin file ("folder/main.php") should be hidden: any Nera
-	 * plugin. Nera All In One's own row stays visible to manager users only
-	 * (non-managers must not reach its Deactivate action — Support\Guard also
-	 * denies the 'deactivate_plugin' cap as backup).
+	 * catalog plugin. The running Nera All In One instance is never hidden —
+	 * identified by plugin_basename( NERA_AIO_FILE ) so GitHub-zip / renamed
+	 * folders still appear on plugins.php.
 	 *
 	 * @param string $plugin_file Plugin basename relative to the plugins dir.
 	 * @return bool
@@ -135,8 +136,8 @@ final class Plugin_Visibility {
 		if ( ! is_string( $plugin_file ) || 0 !== strpos( $plugin_file, 'nera-' ) ) {
 			return false;
 		}
-		if ( 0 === strpos( $plugin_file, 'nera-all-in-one/' ) ) {
-			return ! \Nera\AllInOne\Support\Managers::is_manager();
+		if ( defined( 'NERA_AIO_FILE' ) && $plugin_file === plugin_basename( NERA_AIO_FILE ) ) {
+			return false;
 		}
 		return true;
 	}

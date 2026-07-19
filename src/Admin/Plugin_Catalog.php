@@ -81,7 +81,7 @@ final class Plugin_Catalog {
 		if ( self::legacy_active( $entry['legacy_folder'] ) ) {
 			return array(
 				'key'   => 'standalone',
-				'label' => __( 'Standalone', 'nera-all-in-one' ),
+				'label' => __( 'Active', 'nera-all-in-one' ),
 			);
 		}
 
@@ -99,7 +99,7 @@ final class Plugin_Catalog {
 		if ( self::installed( $entry ) ) {
 			return array(
 				'key'   => 'installed',
-				'label' => __( 'Installed', 'nera-all-in-one' ),
+				'label' => __( 'Inactive', 'nera-all-in-one' ),
 			);
 		}
 
