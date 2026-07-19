@@ -140,16 +140,31 @@ final class Installer {
 		// Already on disk and current — activate only (or no-op). Avoids
 		// Plugin_Upgrader failures when Overview/Manage Install is clicked
 		// against a plugin that was installed outside AIO or on a stale page.
-		$existing = Plugin_Catalog::legacy_plugin_file( $slug );
-		if ( '' !== $existing && ! self::needs_update( $entry, $repo, $ref ) ) {
-			if ( is_plugin_active( $existing ) ) {
+		Plugin_Catalog::refresh_plugins_cache();
+		$existing = Plugin_Catalog::resolve_plugin_file( $entry );
+		$on_disk  = '' !== $existing || is_dir( WP_PLUGIN_DIR . '/' . $slug );
+		if ( $on_disk && ! self::needs_update( $entry, $repo, $ref ) ) {
+			$plugin_file = '' !== $existing ? $existing : self::expected_plugin_file( $entry, $slug );
+			if ( ! is_readable( WP_PLUGIN_DIR . '/' . $plugin_file ) ) {
+				return new \WP_Error(
+					'nera_aio_missing_main',
+					__( 'Plugin folder exists but the main plugin file could not be found.', 'nera-all-in-one' )
+				);
+			}
+			if ( is_plugin_active( $plugin_file ) ) {
 				return true;
 			}
-			return self::try_activate( $existing );
+			return self::try_activate( $plugin_file );
 		}
 
 		$zip = self::resolve_zip( $repo, $ref );
 		if ( '' === $zip ) {
+			if ( $on_disk ) {
+				return new \WP_Error(
+					'nera_aio_no_release',
+					__( 'Plugin is already on disk but no GitHub release was found to update it.', 'nera-all-in-one' )
+				);
+			}
 			return new \WP_Error( 'nera_aio_no_release', __( 'Could not find a release to install.', 'nera-all-in-one' ) );
 		}
 
@@ -159,7 +174,7 @@ final class Installer {
 
 		// Snapshot prior state: an update must not change the active state,
 		// and a fresh install auto-activates (see below).
-		$was_installed = '' !== $existing || is_dir( WP_PLUGIN_DIR . '/' . $slug );
+		$was_installed = $on_disk;
 		$was_active    = '' !== $existing && is_plugin_active( $existing );
 
 		// Git-clone installs carry read-only files (git object files are mode
@@ -197,7 +212,7 @@ final class Installer {
 		}
 
 		wp_clean_plugins_cache( true );
-		$plugin_file = Plugin_Catalog::legacy_plugin_file( $slug );
+		$plugin_file = Plugin_Catalog::resolve_plugin_file( $entry );
 		if ( '' === $plugin_file ) {
 			$plugin_file = self::expected_plugin_file( $entry, $slug );
 		}

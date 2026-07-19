@@ -78,7 +78,7 @@ final class Plugin_Catalog {
 	 * @return array { key: string, label: string }
 	 */
 	public static function status( array $entry, Entitlements $e, Module_Registry $r ) {
-		if ( self::legacy_active( $entry['legacy_folder'] ) ) {
+		if ( self::is_entry_active( $entry ) ) {
 			return array(
 				'key'   => 'standalone',
 				'label' => __( 'Active', 'nera-all-in-one' ),
@@ -131,7 +131,7 @@ final class Plugin_Catalog {
 	 * @return bool
 	 */
 	public static function installed( array $entry ) {
-		return '' !== self::legacy_plugin_file( $entry['slug'] );
+		return '' !== self::resolve_plugin_file( $entry );
 	}
 
 	/**
@@ -141,7 +141,7 @@ final class Plugin_Catalog {
 	 * @return string
 	 */
 	public static function installed_version( array $entry ) {
-		$file = self::legacy_plugin_file( $entry['slug'] );
+		$file = self::resolve_plugin_file( $entry );
 		if ( '' === $file ) {
 			return '';
 		}
@@ -149,7 +149,16 @@ final class Plugin_Catalog {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		}
 		$all = get_plugins();
-		return isset( $all[ $file ]['Version'] ) ? (string) $all[ $file ]['Version'] : '';
+		if ( isset( $all[ $file ]['Version'] ) ) {
+			return (string) $all[ $file ]['Version'];
+		}
+		// Filesystem-resolved plugins may miss a stale get_plugins() cache entry.
+		$abs = WP_PLUGIN_DIR . '/' . $file;
+		if ( is_readable( $abs ) ) {
+			$data = get_plugin_data( $abs, false, false );
+			return isset( $data['Version'] ) ? (string) $data['Version'] : '';
+		}
+		return '';
 	}
 
 	/**
@@ -185,14 +194,70 @@ final class Plugin_Catalog {
 	}
 
 	/**
-	 * Resolve the installed standalone plugin file ("folder/main.php") for a
-	 * legacy folder, by scanning the installed-plugins list for a basename whose
-	 * directory matches. Returns '' when the plugin is not installed.
+	 * Whether the catalog entry's standalone plugin is currently active.
 	 *
-	 * @param string $folder Legacy plugin folder, e.g. 'nera-spin-to-win'.
+	 * Uses the resolved plugin basename (works for renamed install folders),
+	 * then falls back to a legacy folder-prefix scan of active_plugins.
+	 *
+	 * @param array $entry
+	 * @return bool
+	 */
+	public static function is_entry_active( array $entry ) {
+		$file = self::resolve_plugin_file( $entry );
+		if ( '' !== $file ) {
+			if ( ! function_exists( 'is_plugin_active' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/plugin.php';
+			}
+			if ( is_plugin_active( $file ) ) {
+				return true;
+			}
+		}
+
+		$folder = isset( $entry['legacy_folder'] ) ? (string) $entry['legacy_folder'] : '';
+		if ( '' === $folder && isset( $entry['slug'] ) ) {
+			$folder = (string) $entry['slug'];
+		}
+		return '' !== $folder && self::legacy_active( $folder );
+	}
+
+	/**
+	 * Resolve the installed plugin file for a catalog entry ("folder/main.php").
+	 *
+	 * Order: exact slug folder in get_plugins() → slug/main_file on disk → any
+	 * get_plugins() row whose basename ends with the catalog main_file → Plugin
+	 * Name match (catalog name or "Nera {name}"). Exact slug folder wins when
+	 * multiple matches exist.
+	 *
+	 * @param array $entry Catalog entry with slug and optional main_file/name.
 	 * @return string Plugin file relative to the plugins dir, or ''.
 	 */
-	public static function legacy_plugin_file( $folder ) {
+	public static function resolve_plugin_file( array $entry ) {
+		$slug = isset( $entry['slug'] ) ? (string) $entry['slug'] : '';
+		if ( '' === $slug && isset( $entry['legacy_folder'] ) ) {
+			$slug = (string) $entry['legacy_folder'];
+		}
+		$main = isset( $entry['main_file'] ) ? (string) $entry['main_file'] : '';
+		$name = isset( $entry['name'] ) ? (string) $entry['name'] : '';
+
+		$exact = self::legacy_plugin_file( $slug, $main );
+		if ( '' !== $exact ) {
+			return $exact;
+		}
+
+		return self::find_plugin_by_main_or_name( $main, $name, $slug );
+	}
+
+	/**
+	 * Resolve the installed standalone plugin file ("folder/main.php") for a
+	 * legacy folder, by scanning the installed-plugins list for a basename whose
+	 * directory matches. Falls back to $main_file (or folder.php) on disk when
+	 * get_plugins() misses (stale cache / inactive edge cases).
+	 *
+	 * @param string $folder    Legacy plugin folder, e.g. 'nera-spin-to-win'.
+	 * @param string $main_file Optional main PHP filename inside the folder.
+	 * @return string Plugin file relative to the plugins dir, or ''.
+	 */
+	public static function legacy_plugin_file( $folder, $main_file = '' ) {
 		if ( '' === (string) $folder ) {
 			return '';
 		}
@@ -204,7 +269,98 @@ final class Plugin_Catalog {
 				return $basename;
 			}
 		}
+
+		$candidates = array();
+		if ( '' !== (string) $main_file ) {
+			$candidates[] = (string) $main_file;
+		}
+		$candidates[] = $folder . '.php';
+
+		foreach ( array_unique( $candidates ) as $main ) {
+			$rel = $folder . '/' . $main;
+			$abs = WP_PLUGIN_DIR . '/' . $rel;
+			if ( ! is_readable( $abs ) ) {
+				continue;
+			}
+			$data = get_plugin_data( $abs, false, false );
+			if ( ! empty( $data['Name'] ) ) {
+				return $rel;
+			}
+		}
+
 		return '';
+	}
+
+	/**
+	 * Find a plugin installed under a non-canonical folder by main filename or
+	 * Plugin Name. Prefers a basename under $preferred_slug when several match.
+	 *
+	 * @param string $main_file      e.g. 'nera-competitions-seeder.php'.
+	 * @param string $catalog_name   Catalog display name, e.g. 'Competitions Seeder'.
+	 * @param string $preferred_slug Canonical install slug (preferred when tied).
+	 * @return string Plugin file relative to the plugins dir, or ''.
+	 */
+	private static function find_plugin_by_main_or_name( $main_file, $catalog_name, $preferred_slug = '' ) {
+		if ( ! function_exists( 'get_plugins' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+
+		$all        = get_plugins();
+		$main_match = '';
+		$name_match = '';
+		$main_file  = (string) $main_file;
+		$names      = array();
+		if ( '' !== (string) $catalog_name ) {
+			$names[] = (string) $catalog_name;
+			$names[] = 'Nera ' . $catalog_name;
+		}
+
+		foreach ( $all as $basename => $data ) {
+			if ( ! is_string( $basename ) ) {
+				continue;
+			}
+
+			$under_slug = '' !== $preferred_slug && 0 === strpos( $basename, $preferred_slug . '/' );
+
+			if ( '' !== $main_file ) {
+				$suffix = '/' . $main_file;
+				if ( $basename === $main_file || substr( $basename, -strlen( $suffix ) ) === $suffix ) {
+					if ( $under_slug ) {
+						return $basename;
+					}
+					if ( '' === $main_match ) {
+						$main_match = $basename;
+					}
+				}
+			}
+
+			if ( $names ) {
+				$pname = isset( $data['Name'] ) ? (string) $data['Name'] : '';
+				if ( in_array( $pname, $names, true ) ) {
+					if ( $under_slug ) {
+						return $basename;
+					}
+					if ( '' === $name_match ) {
+						$name_match = $basename;
+					}
+				}
+			}
+		}
+
+		return '' !== $main_match ? $main_match : $name_match;
+	}
+
+	/**
+	 * Drop the get_plugins() object-cache so Manage/Overview see folders that
+	 * appeared after the last scan (e.g. FTP / WP-CLI installs).
+	 *
+	 * @return void
+	 */
+	public static function refresh_plugins_cache() {
+		if ( ! function_exists( 'wp_clean_plugins_cache' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+		wp_clean_plugins_cache( true );
 	}
 
 	/**
@@ -220,7 +376,7 @@ final class Plugin_Catalog {
 	 * @return string 'plugin' | 'module' | 'none'
 	 */
 	public static function backing( array $entry ) {
-		if ( '' !== self::legacy_plugin_file( $entry['legacy_folder'] ) ) {
+		if ( '' !== self::resolve_plugin_file( $entry ) ) {
 			return 'plugin';
 		}
 		if ( ! empty( $entry['module_id'] ) ) {
@@ -239,7 +395,7 @@ final class Plugin_Catalog {
 	 */
 	public static function is_on( array $entry, Entitlements $e, Module_Registry $r ) {
 		if ( 'plugin' === self::backing( $entry ) ) {
-			return self::legacy_active( $entry['legacy_folder'] );
+			return self::is_entry_active( $entry );
 		}
 		if ( ! empty( $entry['module_id'] ) ) {
 			$module = $r->get( $entry['module_id'] );
@@ -284,6 +440,7 @@ final class Plugin_Catalog {
 	 * @return void
 	 */
 	public static function render_grid( Entitlements $e, Module_Registry $r ) {
+		self::refresh_plugins_cache();
 		$items    = self::items();
 		$readonly = ! Managers::is_manager();
 		echo '<div class="nera-aio-grid">';

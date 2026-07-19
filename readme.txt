@@ -4,7 +4,7 @@ Tags: nera, licensing, plugin manager, competitions
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.1.1
+Stable tag: 0.1.2
 License: Proprietary
 
 Unified manager for Nera internal plugins + licensing. Loads feature modules gated by license tier.
@@ -23,6 +23,12 @@ Unified manager for Nera internal plugins + licensing. Loads feature modules gat
 2. Open the Nera All In One admin screens to manage catalog plugins and licensing.
 
 == Changelog ==
+
+= 0.1.2 =
+* Detect installed plugins under renamed/non-canonical folders (match by main file or Plugin Name).
+* Harden inactive-installed detection: filesystem fallback + plugins cache refresh on Manage/Overview.
+* Install short-circuit when the plugin folder already exists — activate only, no re-download.
+* Toggle/remove/status use the resolved plugin file so Off→On works for renamed installs.
 
 = 0.1.1 =
 * Always show Nera All In One on the WordPress Plugins page (matched by real install path).

@@ -125,7 +125,7 @@ final class Module_Toggle {
 			wp_send_json_error( array( 'message' => __( 'Insufficient permissions to manage plugins.', 'nera-all-in-one' ) ), 403 );
 		}
 
-		$file = Plugin_Catalog::legacy_plugin_file( $entry['legacy_folder'] );
+		$file = Plugin_Catalog::resolve_plugin_file( $entry );
 		if ( '' === $file ) {
 			wp_send_json_error( array( 'message' => __( 'Plugin not installed.', 'nera-all-in-one' ) ), 404 );
 		}

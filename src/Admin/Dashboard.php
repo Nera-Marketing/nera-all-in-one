@@ -158,6 +158,7 @@ final class Dashboard {
 			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'nera-all-in-one' ) );
 		}
 
+		Plugin_Catalog::refresh_plugins_cache();
 		$counts = Plugin_Catalog::counts( $this->entitlements, $this->registry );
 		$total  = count( Plugin_Catalog::items() );
 		?>

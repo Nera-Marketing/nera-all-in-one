@@ -126,6 +126,7 @@ final class Manage_Screen {
 		}
 
 		$is_manager = Managers::is_manager();
+		Plugin_Catalog::refresh_plugins_cache();
 		?>
 		<div class="wrap nera-aio-wrap">
 			<div class="nera-aio-app">

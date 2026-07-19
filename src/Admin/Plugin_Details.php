@@ -145,7 +145,7 @@ final class Plugin_Details {
 
 		// Re-resolve the installed plugin file from the catalog; never trust a
 		// client-supplied path.
-		$file = Plugin_Catalog::legacy_plugin_file( $entry['legacy_folder'] );
+		$file = Plugin_Catalog::resolve_plugin_file( $entry );
 		if ( '' === $file ) {
 			wp_send_json_error( array( 'message' => __( 'Plugin is not installed.', 'nera-all-in-one' ) ), 404 );
 		}
