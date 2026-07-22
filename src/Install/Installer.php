@@ -118,6 +118,20 @@ final class Installer {
 	}
 
 	/**
+	 * Drop cached releases for many repos at once (manual / scheduled refresh).
+	 *
+	 * @param string[] $repos
+	 * @return void
+	 */
+	public static function flush_repos( array $repos ) {
+		foreach ( $repos as $repo ) {
+			if ( is_string( $repo ) && '' !== $repo ) {
+				self::flush( $repo );
+			}
+		}
+	}
+
+	/**
 	 * Download + install (or update) a catalog entry's plugin from GitHub, then
 	 * activate it.
 	 *

@@ -124,8 +124,11 @@ final class Plugin_Visibility {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * Whether a plugin file ("folder/main.php") should be hidden: any Nera
-	 * catalog plugin. The running Nera All In One instance is never hidden —
+	 * Whether a plugin file ("folder/main.php") should be hidden: only plugins
+	 * this instance actually manages — the catalog defaults (data/plugins.json)
+	 * plus any added via the "Add & Install" repo link, minus any delisted from
+	 * the dashboard. Other plugins (including nera-* plugins not in the catalog)
+	 * stay visible. The running Nera All In One instance is never hidden —
 	 * identified by plugin_basename( NERA_AIO_FILE ) so GitHub-zip / renamed
 	 * folders still appear on plugins.php.
 	 *
@@ -133,13 +136,41 @@ final class Plugin_Visibility {
 	 * @return bool
 	 */
 	private static function is_hidden( $plugin_file ) {
-		if ( ! is_string( $plugin_file ) || 0 !== strpos( $plugin_file, 'nera-' ) ) {
+		if ( ! is_string( $plugin_file ) || '' === $plugin_file ) {
 			return false;
 		}
 		if ( defined( 'NERA_AIO_FILE' ) && $plugin_file === plugin_basename( NERA_AIO_FILE ) ) {
 			return false;
 		}
-		return true;
+		return in_array( $plugin_file, self::managed_plugin_files(), true );
+	}
+
+	/**
+	 * The set of installed plugin files ("folder/main.php") that this instance
+	 * manages, resolved from the catalog to their real install folders so that
+	 * GitHub-zip / renamed folders (e.g. "-main" suffixes) still match. Cached
+	 * for the duration of the request.
+	 *
+	 * @return string[]
+	 */
+	private static function managed_plugin_files() {
+		static $cache = null;
+		if ( null !== $cache ) {
+			return $cache;
+		}
+
+		$files = array();
+		if ( class_exists( __NAMESPACE__ . '\\Plugin_Catalog' ) ) {
+			foreach ( Plugin_Catalog::items() as $entry ) {
+				$file = Plugin_Catalog::resolve_plugin_file( $entry );
+				if ( is_string( $file ) && '' !== $file ) {
+					$files[] = $file;
+				}
+			}
+		}
+
+		$cache = array_values( array_unique( $files ) );
+		return $cache;
 	}
 
 	/**

@@ -144,6 +144,18 @@
       "main_file": "nera-voluntary-code-plugin.php",
       "gh_repo": "Nera-Marketing/nera-voluntary-code-plugin",
       "deps": ["woocommerce"]
+    },
+    {
+      "id": "strike-a-win",
+      "name": "Strike A Win",
+      "tagline": "Skill quiz that earns prize-draw tickets per competition.",
+      "icon": "📝",
+      "accent": "#e11d48",
+      "min_tier": "pro",
+      "slug": "nera-strike-a-win-plugin",
+      "main_file": "nera-strikeawin.php",
+      "gh_repo": "Nera-Marketing/nera-strike-a-win-plugin",
+      "deps": ["woocommerce"]
     }
   ]
 }

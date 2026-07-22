@@ -921,3 +921,54 @@
 	} );
 
 } )();
+
+/* ------------------------------------------------------------------ *
+ * "Check for updates" — flush the release caches, then reload so the
+ * table re-fetches fresh GitHub release data.
+ * ------------------------------------------------------------------ */
+( function () {
+	var btn = document.getElementById( 'nera-aio-refresh-updates' );
+	if ( ! btn ) {
+		return;
+	}
+
+	var status = document.getElementById( 'nera-aio-refresh-status' );
+
+	btn.addEventListener( 'click', function () {
+		var cfg = window.neraAioAdmin || {};
+		if ( ! cfg.ajaxurl || ! cfg.refreshNonce ) {
+			return;
+		}
+
+		var original   = btn.textContent;
+		btn.disabled    = true;
+		btn.textContent = 'Checking…';
+		if ( status ) {
+			status.style.display = 'none';
+			status.textContent   = '';
+		}
+
+		var rq = new URLSearchParams();
+		rq.append( 'action', 'nera_aio_refresh_updates' );
+		rq.append( '_ajax_nonce', cfg.refreshNonce );
+
+		fetch( cfg.ajaxurl, { method: 'POST', credentials: 'same-origin', body: rq } )
+			.then( function ( res ) {
+				return res.json();
+			} )
+			.then( function ( json ) {
+				if ( json && json.success ) {
+					window.location.reload();
+					return;
+				}
+				btn.disabled    = false;
+				btn.textContent = original;
+				window.alert( json && json.data && json.data.message ? json.data.message : 'Update check failed.' );
+			} )
+			.catch( function () {
+				btn.disabled    = false;
+				btn.textContent = original;
+				window.alert( 'Network error.' );
+			} );
+	} );
+} )();

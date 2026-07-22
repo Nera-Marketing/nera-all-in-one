@@ -74,6 +74,13 @@ final class Dashboard {
 	 * @return void
 	 */
 	public function register_menu() {
+		// Only the Nera manager account may see or reach this menu. A WP
+		// capability string cannot express "this specific identity", so we
+		// skip registration entirely for everyone else.
+		if ( ! Managers::is_manager() ) {
+			return;
+		}
+
 		add_menu_page(
 			__( 'Nera All In One', 'nera-all-in-one' ),
 			__( 'Nera All In One', 'nera-all-in-one' ),
@@ -154,7 +161,7 @@ final class Dashboard {
 	 * @return void
 	 */
 	public function render_overview() {
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! Managers::is_manager() ) {
 			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'nera-all-in-one' ) );
 		}
 

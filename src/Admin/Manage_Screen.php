@@ -72,6 +72,11 @@ final class Manage_Screen {
 	 * @return void
 	 */
 	public function register_submenu() {
+		// Only the Nera manager account may see or reach this submenu.
+		if ( ! Managers::is_manager() ) {
+			return;
+		}
+
 		add_submenu_page(
 			'nera-all-in-one',
 			__( 'Nera All In One — Manage', 'nera-all-in-one' ),
@@ -111,6 +116,7 @@ final class Manage_Screen {
 				'removeNonce'     => $is_manager ? wp_create_nonce( 'nera_aio_remove' ) : '',
 				'repoAddNonce'    => $is_manager ? wp_create_nonce( 'nera_aio_repo_add' ) : '',
 				'repoDelistNonce' => $is_manager ? wp_create_nonce( 'nera_aio_repo_delist' ) : '',
+				'refreshNonce'    => $is_manager ? wp_create_nonce( 'nera_aio_refresh_updates' ) : '',
 			)
 		);
 	}
@@ -121,7 +127,7 @@ final class Manage_Screen {
 	 * @return void
 	 */
 	public function render_page() {
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! Managers::is_manager() ) {
 			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'nera-all-in-one' ) );
 		}
 
@@ -168,7 +174,9 @@ final class Manage_Screen {
 			<label class="screen-reader-text" for="nera-aio-repo-url"><?php echo esc_html__( 'GitHub repository URL', 'nera-all-in-one' ); ?></label>
 			<input type="url" id="nera-aio-repo-url" class="regular-text" placeholder="https://github.com/Nera-Marketing/plugin-name" />
 			<button type="button" class="button button-primary" id="nera-aio-repo-add"><?php echo esc_html__( 'Add & Install', 'nera-all-in-one' ); ?></button>
+			<button type="button" class="button" id="nera-aio-refresh-updates"><?php echo esc_html__( 'Check for updates', 'nera-all-in-one' ); ?></button>
 			<span id="nera-aio-repo-status" class="nera-aio-inline-notice" style="display:none;"></span>
+			<span id="nera-aio-refresh-status" class="nera-aio-inline-notice" style="display:none;"></span>
 		</div>
 		<?php
 	}

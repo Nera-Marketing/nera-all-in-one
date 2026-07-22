@@ -9,6 +9,7 @@ use Nera\AllInOne\Entitlements\Entitlements;
 use Nera\AllInOne\License\License_Client;
 use Nera\AllInOne\License\License_Store;
 use Nera\AllInOne\Modules\Module_Registry;
+use Nera\AllInOne\Admin\Update_Refresher;
 use Nera\AllInOne\Support\Guard;
 use Nera\AllInOne\Support\Logger;
 
@@ -68,6 +69,12 @@ final class Plugin {
 		// is_admin() so REST/XML-RPC user endpoints are covered too.
 		if ( class_exists( Guard::class ) ) {
 			Guard::init();
+		}
+
+		// Update-check refresher (manual button + twice-daily cron). Registered
+		// outside is_admin() so the cron callback exists during frontend wp-cron.
+		if ( class_exists( Update_Refresher::class ) ) {
+			Update_Refresher::init();
 		}
 
 		$this->register_modules();
