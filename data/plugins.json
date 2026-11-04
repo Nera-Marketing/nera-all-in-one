@@ -156,6 +156,18 @@
       "main_file": "nera-strikeawin.php",
       "gh_repo": "Nera-Marketing/nera-strike-a-win-plugin",
       "deps": ["woocommerce"]
+    },
+    {
+      "id": "vote",
+      "name": "Vote",
+      "tagline": "Time-boxed member votes on a list of options, with ranked results for the team.",
+      "icon": "🗳️",
+      "accent": "#0d9488",
+      "min_tier": "pro",
+      "slug": "nera-vote-plugin",
+      "main_file": "nera-vote-plugin.php",
+      "gh_repo": "Nera-Marketing/nera-vote-plugin",
+      "deps": []
     }
   ]
 }
