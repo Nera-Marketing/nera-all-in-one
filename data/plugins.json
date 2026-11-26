@@ -168,6 +168,18 @@
       "main_file": "nera-vote-plugin.php",
       "gh_repo": "Nera-Marketing/nera-vote-plugin",
       "deps": []
+    },
+    {
+      "id": "credit-page",
+      "name": "Credit Page",
+      "tagline": "Serves the Nera Marketing credit page at the attribution URL.",
+      "icon": "🏷️",
+      "accent": "#1313ec",
+      "min_tier": "free",
+      "slug": "nera-credit-page",
+      "main_file": "nera-credit-page.php",
+      "gh_repo": "Nera-Marketing/nera-credit-page-plugin",
+      "deps": []
     }
   ]
 }
