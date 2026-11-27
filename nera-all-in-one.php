@@ -3,7 +3,7 @@
  * Plugin Name:       Nera All In One
  * Plugin URI:        https://github.com/Nera-Marketing/nera-all-in-one
  * Description:        Unified manager for Nera internal plugins + licensing. Loads feature modules gated by license tier.
- * Version: 1.0.2
+ * Version: 1.0.3
  * Author:            Nera
  * Text Domain:       nera-all-in-one
  * Requires at least: 6.0
@@ -17,7 +17,7 @@ defined( 'ABSPATH' ) || exit;
 use YahnisElsts\PluginUpdateChecker\v5p5\Vcs\GitHubApi;
 
 // --- Constants ---------------------------------------------------------------
-define( 'NERA_AIO_VERSION', '1.0.2' );
+define( 'NERA_AIO_VERSION', '1.0.3' );
 define( 'NERA_AIO_FILE', __FILE__ );
 define( 'NERA_AIO_DIR', plugin_dir_path( __FILE__ ) );
 define( 'NERA_AIO_URL', plugin_dir_url( __FILE__ ) );
