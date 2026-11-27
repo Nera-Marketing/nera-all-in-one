@@ -39,7 +39,7 @@ final class Plugin_Catalog {
 	 *
 	 * Each entry: id, name, tagline, icon, accent, min_tier,
 	 *   legacy_folder (== install slug, kept for compat), slug, main_file,
-	 *   gh_repo|null, deps[], module_id|null
+	 *   gh_repo|null, deps[], edit_url, module_id|null
 	 *
 	 * @return array[]
 	 */
