@@ -179,6 +179,7 @@
       "slug": "nera-credit-page",
       "main_file": "nera-credit-page.php",
       "gh_repo": "Nera-Marketing/nera-credit-page-plugin",
+      "edit_url": "admin.php?page=ncp-credit-7q3m",
       "deps": []
     }
   ]

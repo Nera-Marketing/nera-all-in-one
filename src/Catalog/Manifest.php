@@ -47,6 +47,7 @@ final class Manifest {
 		'main_file' => '',
 		'gh_repo'   => null,
 		'deps'      => array(),
+		'edit_url'  => '',
 	);
 
 	/**
@@ -204,8 +205,9 @@ final class Manifest {
 	private static function normalise( array $entry ) {
 		$e = array_merge( self::$defaults, $entry );
 
-		$e['deps']    = is_array( $e['deps'] ) ? array_values( array_filter( array_map( 'strval', $e['deps'] ) ) ) : array();
-		$e['gh_repo'] = ( is_string( $e['gh_repo'] ) && '' !== $e['gh_repo'] ) ? $e['gh_repo'] : null;
+		$e['deps']     = is_array( $e['deps'] ) ? array_values( array_filter( array_map( 'strval', $e['deps'] ) ) ) : array();
+		$e['gh_repo']  = ( is_string( $e['gh_repo'] ) && '' !== $e['gh_repo'] ) ? $e['gh_repo'] : null;
+		$e['edit_url'] = is_string( $e['edit_url'] ) ? $e['edit_url'] : '';
 
 		// Default the install folder to the id when a slug is omitted.
 		if ( '' === $e['slug'] ) {
