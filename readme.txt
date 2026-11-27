@@ -24,6 +24,21 @@ Unified manager for Nera internal plugins + licensing. Loads feature modules gat
 
 == Changelog ==
 
+= 1.0.3 =
+* Added the Credit Page plugin to the catalog.
+* Plugin details popup: an "Edit page" button for plugins with a hidden editor, shown while the plugin is active.
+
+= 1.0.2 =
+* Added a member-voting plugin to the catalog.
+
+= 1.0.1 =
+* Added the plugin logo and release tooling updates.
+
+= 1.0.0 =
+* "Check for updates" button on the Manage screen, plus a twice-daily automatic check.
+* The Plugins list now hides only the plugins this site manages.
+* Added a skill-quiz plugin to the catalog.
+
 = 0.1.2 =
 * Detect installed plugins under renamed/non-canonical folders (match by main file or Plugin Name).
 * Harden inactive-installed detection: filesystem fallback + plugins cache refresh on Manage/Overview.
