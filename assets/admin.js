@@ -278,7 +278,8 @@
 	}
 
 	/**
-	 * Build the action row: Remove (when allowed) + Close.
+	 * Build the action row: Remove (when allowed) + Edit page (when the plugin
+	 * has an editor and is active) + Close.
 	 *
 	 * @param {Object} d
 	 */
@@ -293,6 +294,12 @@
 				doRemove( d, removeBtn );
 			} );
 			actions.appendChild( removeBtn );
+		}
+
+		if ( d.edit_url ) {
+			var editLink  = el( 'a', 'button button-primary', 'Edit page' );
+			editLink.href = d.edit_url;
+			actions.appendChild( editLink );
 		}
 
 		var closeBtn  = el( 'button', 'button button-secondary', 'Close' );

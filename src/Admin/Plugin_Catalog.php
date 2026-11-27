@@ -61,6 +61,7 @@ final class Plugin_Catalog {
 				'slug'          => $m['slug'],
 				'main_file'     => $m['main_file'],
 				'gh_repo'       => $m['gh_repo'],
+				'edit_url'      => isset( $m['edit_url'] ) ? (string) $m['edit_url'] : '',
 				'deps'          => $m['deps'],
 				'custom'        => ! empty( $m['custom'] ),
 				'module_id'     => in_array( $m['id'], self::WRAPPED_MODULES, true ) ? $m['id'] : null,
@@ -218,6 +219,27 @@ final class Plugin_Catalog {
 			$folder = (string) $entry['slug'];
 		}
 		return '' !== $folder && self::legacy_active( $folder );
+	}
+
+	/**
+	 * Admin URL of the entry's own editor screen, shown only while its plugin is active
+	 * (the screen is registered by that plugin).
+	 *
+	 * The catalog value is a path relative to wp-admin; absolute URLs and any
+	 * scheme (https:, javascript:) are refused.
+	 *
+	 * @param array $entry
+	 * @return string Absolute admin URL, or ''.
+	 */
+	public static function edit_url( array $entry ) {
+		$path = isset( $entry['edit_url'] ) ? trim( (string) $entry['edit_url'] ) : '';
+		if ( '' === $path || 0 === strpos( $path, '//' ) || null !== wp_parse_url( $path, PHP_URL_SCHEME ) ) {
+			return '';
+		}
+		if ( ! self::is_entry_active( $entry ) ) {
+			return '';
+		}
+		return admin_url( ltrim( $path, '/' ) );
 	}
 
 	/**

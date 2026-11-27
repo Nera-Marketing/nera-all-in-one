@@ -114,6 +114,7 @@ final class Plugin_Details {
 				'deps'             => array_values( (array) $entry['deps'] ),
 				'description_html' => self::readme_html( $repo ),
 				'can_remove'       => $can_remove,
+				'edit_url'         => Plugin_Catalog::edit_url( $entry ),
 			)
 		);
 	}
